@@ -1,0 +1,73 @@
+CREATE TABLE "membres" (
+  "id" integer PRIMARY KEY,
+  "sexe" varchar,
+  "prénom" varchar,
+  "nom" varchar,
+  "date_naissance" timestamp,
+  "date_décès" timestamp,
+  "lock_user_id" integer,
+  "id_user" integer,
+  "lock_time" timestamp,
+  "informations_complémentaires" varchar,
+  "photo" varchar,
+  "privé" boolean,
+  "id_union" integer,
+  "biologique" bool
+);
+
+CREATE TABLE "unions" (
+  "id" integer PRIMARY KEY,
+  "id_membre_1" integer,
+  "id_membre_2" integer,
+  "date_union" timestamp,
+  "date_séparation" timestamp
+);
+
+CREATE TABLE "coordonnées" (
+  "id" integer PRIMARY KEY,
+  "id_membre" integer,
+  "adresse" varchar,
+  "téléphone" varchar,
+  "email" varchar
+);
+
+CREATE TABLE "professions" (
+  "id" integer PRIMARY KEY,
+  "id_membre" integer,
+  "métier" varchar,
+  "date_début" timestamp,
+  "date_fin" timestamp
+);
+
+CREATE TABLE "users" (
+  "id" integer PRIMARY KEY,
+  "email" varchar NOT NULL,
+  "password" varchar NOT NULL,
+  "role" varchar NOT NULL,
+  "validé" boolean NOT NULL DEFAULT false
+);
+
+CREATE TABLE "logs" (
+  "id" integer PRIMARY KEY,
+  "id_user" integer,
+  "table_modifiée" varchar,
+  "id_enregistrement" integer,
+  "action" varchar,
+  "date" timestamp
+);
+
+ALTER TABLE "membres" ADD FOREIGN KEY ("lock_user_id") REFERENCES "users" ("id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "membres" ADD FOREIGN KEY ("id_user") REFERENCES "users" ("id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "membres" ADD FOREIGN KEY ("id_union") REFERENCES "unions" ("id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "unions" ADD FOREIGN KEY ("id_membre_1") REFERENCES "membres" ("id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "unions" ADD FOREIGN KEY ("id_membre_2") REFERENCES "membres" ("id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "coordonnées" ADD FOREIGN KEY ("id_membre") REFERENCES "membres" ("id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "professions" ADD FOREIGN KEY ("id_membre") REFERENCES "membres" ("id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "logs" ADD FOREIGN KEY ("id_user") REFERENCES "users" ("id") DEFERRABLE INITIALLY IMMEDIATE;
