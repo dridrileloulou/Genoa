@@ -1,5 +1,13 @@
+CREATE TABLE "users" (
+  "id" INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  "email" varchar NOT NULL,
+  "password" varchar NOT NULL,
+  "role" varchar NOT NULL,
+  "validé" boolean NOT NULL DEFAULT false
+);
+
 CREATE TABLE "membres" (
-  "id" integer PRIMARY KEY,
+  "id" INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   "sexe" varchar,
   "prénom" varchar,
   "nom" varchar,
@@ -16,7 +24,7 @@ CREATE TABLE "membres" (
 );
 
 CREATE TABLE "unions" (
-  "id" integer PRIMARY KEY,
+  "id" INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   "id_membre_1" integer,
   "id_membre_2" integer,
   "date_union" timestamp,
@@ -24,7 +32,7 @@ CREATE TABLE "unions" (
 );
 
 CREATE TABLE "coordonnées" (
-  "id" integer PRIMARY KEY,
+  "id" INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   "id_membre" integer,
   "adresse" varchar,
   "téléphone" varchar,
@@ -32,23 +40,15 @@ CREATE TABLE "coordonnées" (
 );
 
 CREATE TABLE "professions" (
-  "id" integer PRIMARY KEY,
+  "id" INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   "id_membre" integer,
   "métier" varchar,
   "date_début" timestamp,
   "date_fin" timestamp
 );
 
-CREATE TABLE "users" (
-  "id" integer PRIMARY KEY,
-  "email" varchar NOT NULL,
-  "password" varchar NOT NULL,
-  "role" varchar NOT NULL,
-  "validé" boolean NOT NULL DEFAULT false
-);
-
 CREATE TABLE "logs" (
-  "id" integer PRIMARY KEY,
+  "id" INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   "id_user" integer,
   "table_modifiée" varchar,
   "id_enregistrement" integer,
