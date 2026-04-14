@@ -1,6 +1,6 @@
 CREATE TABLE "users" (
   "id" INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  "email" varchar NOT NULL,
+  "email" varchar UNIQUE NOT NULL,
   "password" varchar NOT NULL,
   "role" varchar NOT NULL,
   "validé" boolean NOT NULL DEFAULT false
