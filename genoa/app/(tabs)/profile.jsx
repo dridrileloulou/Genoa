@@ -3,8 +3,9 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Component } from 'react';
 import { Login } from '@/components/authentification/Login';
+import { AdminPage } from '@/components/adminPage/AdminPage';
 
-const connected = false; // Simulate a connection status
+const connected = true; // Simulate a connection status
 const isAdmin = true; // Simulate an admin status
 
 
@@ -25,14 +26,7 @@ export default function ProfileScreen() {
   } else {
     if (isAdmin) {
       content = (
-        <ThemedView style={styles.adminContainer}>
-          <ThemedText type="title" style={styles.title}>
-            Admin Profile
-          </ThemedText>
-          <ThemedText type="subtitle" style={styles.subtitle}>
-            Welcome, admin! Here you can manage the application.
-          </ThemedText>
-        </ThemedView>
+        <AdminPage />
       );
     } else {
     content = (
