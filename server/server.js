@@ -1,104 +1,22 @@
+// -- Import des Routes --
+const route_users = require('./routes/users.js');
+const route_membres = require('./routes/membres.js');
+const route_unions = require('./routes/unions.js');
+const route_coordonnees = require('./routes/coordonnees.js');
+const route_logs = require('./routes/logs.js');
+const route_professions = require('./routes/professions.js');
+
+//
 const express = require('express');
 const app = express();
 
-const {Pool} = require ('pg'); // import de Pool uniquement dans biblio pg
-
-
-//config
-const config = {
-    user : 'postgres',
-    host : 'localhost',
-    database : 'genoa',
-    password : '1234',
-    port : 5432,
-};
-
-const pool = new Pool (config);
-
 app.use(express.json()); // pour que express lise du Json
 
-//Affiche l'erreur côté serveur (node) et client(postman ou react)
-const handleError = (res, err, route) => {  
-    console.log(`Erreur ${route}:`, err.message);
-    res.status(400).json({ error: err.message });
-};
-
-// ---- API REST ----
-
-// -- GET -- 
-app.get('/users', (req, res) => {
-
-    //on va chercher côté bdd (pool.query = va chercher dans la BDD sql)
-    pool.query('SELECT * FROM users')   
-    .then(result => {
-        res.json(result.rows);
-        console.log('GET réussi !')
-    })
-    .catch(err => handleError(res, err, 'GET /users'))
-});
-
-
-// -- GET (specific user) --
-app.get('/users/:id', (req, res) => {
-
-    let id = req.params.id
-    
-    pool.query(`SELECT * FROM users WHERE id = ${id}`)
-    .then(result => {
-        res.json(result.rows);
-        console.log('GET réussi !')
-    })
-    .catch(err => handleError(res, err, 'GET /users'))
-
-});
-// -- POST -- 
-app.post('/users', (req, res) => { // /post <email> <password>
-
-    let email = req.body.email 
-    let password = req.body.password
-
-    // En SQL, pour différencier valeurs et nom de colonne = ''
-    // par défaut, role et false sont nuls   
-    pool.query(`INSERT INTO users (email, password, role, validé) VALUES ('${email}', '${password}', 'user', false) ;`) 
-    .then(result => {
-        res.json(result.rows);
-        console.log("Nouvel ajout d'utilisateur réussi !");
-    })
-    .catch(err => handleError(res, err, 'POST /users'))
-    
-});
-
-// -- PATCH -- 
-app.patch('/users/:id', (req, res) => {
-
-    let email = req.body.email 
-    let password = req.body.password
-    let role = req.body.role
-    let validé = req.body.valide
-
-    let id = req.params.id
-    pool.query(`UPDATE users SET email = '${email}',password = '${password}',role = '${role}',"validé" = '${validé}' WHERE id = ${id} ;`) 
-    .then(result => {
-        res.json(result.rows);
-        console.log("Update d'utilisateur réussi !");
-    })
-    .catch(err => handleError(res, err, 'PATCH /users'))
-    
-});
-
-// -- DELETE -- 
-app.delete('/users/:id', (req, res) => {
-
-    let id = req.params.id
-    
-    pool.query(`DELETE FROM users WHERE id = ${id};`) 
-    .then(result => {
-        res.json(result.rows);
-        console.log("Supression d'utilisateur réussi !");
-    })
-    .catch(err => handleError(res, err, 'PATCH /users'))
-    
-});
-
+app.use(route_users) // tables users
+app.use(route_membres) // tables membres
+app.use(route_unions) // table unions
+app.use(route_coordonnees)
+app.use(route_logs)
+app.use(route_professions)
 
 app.listen(3000)
