@@ -1,10 +1,18 @@
 import { Button } from '@react-navigation/elements';
-import { View, Text, TextInput, StyleSheet, Pressable } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Pressable, Modal } from 'react-native';
 import { Href, Link } from 'expo-router';
 import { openBrowserAsync, WebBrowserPresentationStyle } from 'expo-web-browser';
+import { useState } from 'react';
+import { SignUpModal } from './SignUpModal';
+
+
 
 
 export function Login() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [modalVisible, setModalVisible] = useState(false);
+  
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Login</Text>
@@ -46,8 +54,15 @@ export function Login() {
         <Text style={styles.loginButtonText}>🚀 Login</Text>
       </Pressable>
       <Text style={styles.signupText}>
-        Don't have an account? <Link href="/signup" style={styles.link}>Sign up</Link>
+        Don't have an account?{' '}
+        <Pressable onPress={() => setModalVisible(true)}>
+          <Text style={styles.link}>Sign up</Text>
+        </Pressable>
       </Text>
+      <SignUpModal 
+        visible={modalVisible} 
+        onClose={() => setModalVisible(false)} 
+      />
       <Text style={styles.signupText}>
         Forgot your password? <Link href="/reset-password" style={styles.link}>Reset it</Link>
       </Text>

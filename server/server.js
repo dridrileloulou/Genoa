@@ -1,5 +1,10 @@
 const express = require('express');
-const app = express();
+const cors = require('cors');
+
+const app = express(); 
+
+app.use(cors());
+app.use(express.json());
 
 const {Pool} = require ('pg'); // import de Pool uniquement dans biblio pg
 
@@ -25,8 +30,12 @@ const handleError = (res, err, route) => {
 
 // ---- API REST ----
 
+//console.log("Server is running on http://localhost:3000");
+
+
 // -- GET -- 
 app.get('/users', (req, res) => {
+    console.log("GET /users hit");
 
     //on va chercher côté bdd (pool.query = va chercher dans la BDD sql)
     pool.query('SELECT * FROM users')   
@@ -40,6 +49,7 @@ app.get('/users', (req, res) => {
 
 // -- GET (specific user) --
 app.get('/users/:id', (req, res) => {
+    console.log("GET /users/:id hit");
 
     let id = req.params.id
     
@@ -53,7 +63,7 @@ app.get('/users/:id', (req, res) => {
 });
 // -- POST -- 
 app.post('/users', (req, res) => { // /post <email> <password>
-
+    console.log("POST /users hit");
     let email = req.body.email 
     let password = req.body.password
 
@@ -70,7 +80,7 @@ app.post('/users', (req, res) => { // /post <email> <password>
 
 // -- PATCH -- 
 app.patch('/users/:id', (req, res) => {
-
+    console.log("PATCH /users/:id hit");
     let email = req.body.email 
     let password = req.body.password
     let role = req.body.role
@@ -88,7 +98,7 @@ app.patch('/users/:id', (req, res) => {
 
 // -- DELETE -- 
 app.delete('/users/:id', (req, res) => {
-
+    console.log("DELETE /users/:id hit");
     let id = req.params.id
     
     pool.query(`DELETE FROM users WHERE id = ${id};`) 
@@ -101,4 +111,6 @@ app.delete('/users/:id', (req, res) => {
 });
 
 
-app.listen(3000)
+app.listen(3000, '0.0.0.0', () => {
+  console.log("Server running");
+});
