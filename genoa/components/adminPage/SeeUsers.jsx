@@ -19,7 +19,7 @@ export function SeeUser({ visible, onClose }) {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/users');
+      const response = await fetch('http://172.20.10.2:3000/users');
       const data = await response.json();
 
       if (response.ok) {
@@ -41,7 +41,7 @@ export function SeeUser({ visible, onClose }) {
   // DELETE USER
   const deleteUser = async (id) => {
     try {
-      const res = await fetch(`http://localhost:3000/users/${id}`, {
+      const res = await fetch(`http://172.20.10.2:3000/users/${id}`, {
         method: 'DELETE',
       });
 
@@ -56,7 +56,7 @@ export function SeeUser({ visible, onClose }) {
   // PATCH ROLE
   const updateRole = async (id) => {
     try {
-      const res = await fetch(`http://localhost:3000/users/${id}`, {
+      const res = await fetch(`http://172.20.10.2:3000/users/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
