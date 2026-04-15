@@ -5,13 +5,14 @@ import { Component } from 'react';
 import { Login } from '@/components/authentification/Login';
 
 const connected = false; // Simulate a connection status
+const isAdmin = true; // Simulate an admin status
 
 
 export default function ProfileScreen() {
   let content;
   if (!connected) {
     content = (
-      <ThemedView style={styles.container}>
+      <ThemedView style={styles.container_not_connected}>
         <ThemedText type="title" style={styles.title}>
           Profile
         </ThemedText>
@@ -22,6 +23,18 @@ export default function ProfileScreen() {
       </ThemedView>
     );
   } else {
+    if (isAdmin) {
+      content = (
+        <ThemedView style={styles.adminContainer}>
+          <ThemedText type="title" style={styles.title}>
+            Admin Profile
+          </ThemedText>
+          <ThemedText type="subtitle" style={styles.subtitle}>
+            Welcome, admin! Here you can manage the application.
+          </ThemedText>
+        </ThemedView>
+      );
+    } else {
     content = (
       <ThemedView style={styles.container}>
         <ThemedText type="title" style={styles.title}>
@@ -32,14 +45,20 @@ export default function ProfileScreen() {
         </ThemedText>
       </ThemedView>
     );
+    }
   }
   
   return content;
 }
 
 const styles = StyleSheet.create({
+  container_not_connected: {
+    backgroundColor: '#f75151',
+    flex: 1,
+    padding: 20,
+  },
   container: {
-    backgroundColor: '#1f0a0a',
+    backgroundColor: '#2d7a2d',
     flex: 1,
     padding: 20,
   },
@@ -57,5 +76,8 @@ const styles = StyleSheet.create({
     textAlign: 'justify',
     marginVertical: 10,
     lineHeight: 24,
+  },
+  adminContainer: {
+    backgroundColor: '#f75151',
   },
 });
