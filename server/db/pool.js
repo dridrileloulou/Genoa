@@ -1,4 +1,4 @@
-const { Pool } = require('pg'); // on prend juste Pool de pg
+const { Pool } = require('pg'); // pool = fonction "tirer", importé depuis pg (postgre)
  
 const config = { // connexion à PostGreSQL
     user: 'postgres',
@@ -8,6 +8,6 @@ const config = { // connexion à PostGreSQL
     port: 5432, // port par défaut de PostGre
 };
  
-const pool = new Pool(config); // pool = groupe de connexions ouvertes en permanence
+const pool = new Pool(config); // 
  
 module.exports = pool; // export pour pouvoir être utilisé par les routes
