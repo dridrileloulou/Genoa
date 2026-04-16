@@ -71,3 +71,7 @@ ALTER TABLE "coordonnées" ADD FOREIGN KEY ("id_membre") REFERENCES "membres" ("
 ALTER TABLE "professions" ADD FOREIGN KEY ("id_membre") REFERENCES "membres" ("id") DEFERRABLE INITIALLY IMMEDIATE;
 
 ALTER TABLE "logs" ADD FOREIGN KEY ("id_user") REFERENCES "users" ("id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "membres" ADD CONSTRAINT unique_membre UNIQUE ("prénom", nom, date_naissance, "date_décès");
+
+ALTER TABLE "membres" ADD CONSTRAINT unique_membre UNIQUE ("prénom", nom, date_naissance);
