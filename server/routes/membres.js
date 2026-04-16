@@ -1,6 +1,7 @@
 const express = require('express'); // express
 const router = express.Router(); // routeur
 const pool = require('../db/pool.js'); // pool
+const { isEditor, isAdmin } = require('../middleware/roles.js'); // pour les roles (user,éditeur,admin)
 
 
 //Affiche l'erreur côté serveur (node) et client(postman ou reactnative)
@@ -39,7 +40,7 @@ router.get('/membres/:id', (req, res) => {
 });
 
 // -- POST -- 
-router.post('/membres', (req, res) => {
+router.post('/membres', isEditor, (req, res) => {
     const { sexe, prénom, nom, date_naissance, date_décès, id_user, informations_complémentaires, photo, privé, id_union, biologique } = req.body;
     pool.query(`INSERT INTO membres (sexe, "prénom", nom, date_naissance, "date_décès", id_user, "informations_complémentaires", photo, "privé", id_union, biologique) VALUES ('${sexe}', '${prénom}', '${nom}', '${date_naissance}', ${date_décès ? `'${date_décès}'` : 'NULL'}, ${id_user}, ${informations_complémentaires ? `'${informations_complémentaires}'` : 'NULL'}, ${photo ? `'${photo}'` : 'NULL'}, ${privé}, ${id_union ? id_union : 'NULL'}, ${biologique !== undefined ? biologique : 'NULL'})`)
     .then(result => {
@@ -51,7 +52,7 @@ router.post('/membres', (req, res) => {
 
 
 // -- PATCH -- 
-router.patch('/membres/:id', (req, res) => {
+router.patch('/membres/:id', isEditor, (req, res) => {
     const { sexe, prénom, nom, date_naissance, date_décès, informations_complémentaires, photo, privé, id_union, biologique } = req.body;
     const id = req.params.id;
     pool.query(`UPDATE membres SET sexe='${sexe}', "prénom"='${prénom}', nom='${nom}', date_naissance='${date_naissance}', "date_décès"='${date_décès}', "informations_complémentaires"='${informations_complémentaires}', photo='${photo}', "privé"=${privé}, id_union=${id_union}, biologique=${biologique} WHERE id=${id}`)
@@ -63,7 +64,7 @@ router.patch('/membres/:id', (req, res) => {
 });
 
 // -- DELETE -- 
-router.delete('/membres/:id', (req, res) => {
+router.delete('/membres/:id', isAdmin, (req, res) => {
 
     const id = req.params.id
     

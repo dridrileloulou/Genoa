@@ -20,11 +20,12 @@ app.use(express.json());
 
 // Attention, l'odre des routes comptes
 
+app.use(route_users) //uniquement possible de faire post
+
 app.use(route_login)
 
 app.use(verifyToken);
 
-app.use(route_users)
 app.use(route_membres)
 app.use(route_unions)
 app.use(route_coordonnees)

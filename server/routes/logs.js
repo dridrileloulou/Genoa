@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db/pool.js');
+const { isEditor, isAdmin } = require('../middleware/roles.js'); // pour les roles (user,éditeur,admin)
+
 
 const handleError = (res, err, route) => {
     console.log(`Erreur ${route}:`, err.message);
@@ -8,7 +10,7 @@ const handleError = (res, err, route) => {
 };
 
 // -- GET --
-router.get('/logs', (req, res) => {
+router.get('/logs', isAdmin,(req, res) => {
     pool.query('SELECT * FROM logs')
     .then(result => {
         res.json(result.rows);
@@ -18,7 +20,7 @@ router.get('/logs', (req, res) => {
 });
 
 // -- GET (specific log) --
-router.get('/logs/:id', (req, res) => {
+router.get('/logs/:id', isAdmin, (req, res) => {
     const id = req.params.id;
     pool.query(`SELECT * FROM logs WHERE id = ${id}`)
     .then(result => {

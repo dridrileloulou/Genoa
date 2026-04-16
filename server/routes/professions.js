@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db/pool.js');
+const { isEditor, isAdmin } = require('../middleware/roles.js');
 
 const handleError = (res, err, route) => {
     console.log(`Erreur ${route}:`, err.message);
@@ -29,7 +30,7 @@ router.get('/professions/:id', (req, res) => {
 });
 
 // -- POST --
-router.post('/professions', (req, res) => {
+router.post('/professions', isEditor, (req, res) => {
     const { id_membre, métier, date_début, date_fin } = req.body;
     pool.query(`INSERT INTO professions (id_membre, "métier", "date_début", date_fin) VALUES (${id_membre}, '${métier}', '${date_début}', '${date_fin}')`)
     .then(result => {
@@ -40,7 +41,7 @@ router.post('/professions', (req, res) => {
 });
 
 // -- PATCH --
-router.patch('/professions/:id', (req, res) => {
+router.patch('/professions/:id', isEditor, (req, res) => {
     const { id_membre, métier, date_début, date_fin } = req.body;
     const id = req.params.id;
     pool.query(`UPDATE professions SET id_membre=${id_membre}, "métier"='${métier}', "date_début"='${date_début}', date_fin='${date_fin}' WHERE id=${id}`)
@@ -52,7 +53,7 @@ router.patch('/professions/:id', (req, res) => {
 });
 
 // -- DELETE --
-router.delete('/professions/:id', (req, res) => {
+router.delete('/professions/:id', isAdmin ,(req, res) => {
     const id = req.params.id;
     pool.query(`DELETE FROM professions WHERE id=${id}`)
     .then(result => {
