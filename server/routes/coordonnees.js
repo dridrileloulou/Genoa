@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db/pool.js');
+const { isEditor, isAdmin } = require('../middleware/roles.js');
 
 const handleError = (res, err, route) => {
     console.log(`Erreur ${route}:`, err.message);
@@ -29,7 +30,7 @@ router.get('/coordonnees/:id', (req, res) => {
 });
 
 // -- POST --
-router.post('/coordonnees', (req, res) => {
+router.post('/coordonnees', isEditor, (req, res) => {
     const { id_membre, adresse, téléphone, email } = req.body;
     pool.query(`INSERT INTO "coordonnées" (id_membre, adresse, "téléphone", email) VALUES (${id_membre}, '${adresse}', '${téléphone}', '${email}')`)
     .then(result => {
@@ -40,7 +41,7 @@ router.post('/coordonnees', (req, res) => {
 });
 
 // -- PATCH --
-router.patch('/coordonnees/:id', (req, res) => {
+router.patch('/coordonnees/:id', isEditor, (req, res) => {
     const { id_membre, adresse, téléphone, email } = req.body;
     const id = req.params.id;
     pool.query(`UPDATE "coordonnées" SET id_membre=${id_membre}, adresse='${adresse}', "téléphone"='${téléphone}', email='${email}' WHERE id=${id}`)
@@ -52,7 +53,7 @@ router.patch('/coordonnees/:id', (req, res) => {
 });
 
 // -- DELETE --
-router.delete('/coordonnees/:id', (req, res) => {
+router.delete('/coordonnees/:id', isAdmin , (req, res) => {
     const id = req.params.id;
     pool.query(`DELETE FROM "coordonnées" WHERE id=${id}`)
     .then(result => {

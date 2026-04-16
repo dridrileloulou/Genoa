@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db/pool.js'); // pool
-
+const { isEditor, isAdmin } = require('../middleware/roles.js');
 
 //Affiche l'erreur côté serveur (node) et client(postman ou reactnative)
 const handleError = (res, err, route) => {
@@ -31,7 +31,7 @@ router.get('/unions/:id', (req, res) => {
 });
 
 // -- POST --
-router.post('/unions', (req, res) => {
+router.post('/unions', isEditor, (req, res) => {
     const { id_membre_1, id_membre_2, date_union, date_séparation } = req.body;
     pool.query(`INSERT INTO unions (id_membre_1, id_membre_2, date_union, "date_séparation") VALUES (${id_membre_1}, ${id_membre_2}, ${date_union ? `'${date_union}'` : 'NULL'}, ${date_séparation ? `'${date_séparation}'` : 'NULL'})`)
     .then(result => {
@@ -42,7 +42,7 @@ router.post('/unions', (req, res) => {
 });
 
 // -- PATCH --
-router.patch('/unions/:id', (req, res) => {
+router.patch('/unions/:id', isEditor, (req, res) => {
     const { id_membre_1, id_membre_2, date_union, date_séparation } = req.body;
     const id = req.params.id;
     pool.query(`UPDATE unions SET id_membre_1=${id_membre_1}, id_membre_2=${id_membre_2}, date_union='${date_union}', "date_séparation"='${date_séparation}' WHERE id=${id}`)
@@ -54,7 +54,7 @@ router.patch('/unions/:id', (req, res) => {
 });
 
 // -- DELETE --
-router.delete('/unions/:id', (req, res) => {
+router.delete('/unions/:id', isAdmin, (req, res) => {
     const id = req.params.id;
     pool.query(`DELETE FROM unions WHERE id=${id}`)
     .then(result => {
