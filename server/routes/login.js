@@ -14,7 +14,7 @@ router.post('/login', (req, res) => {
     pool.query('SELECT * FROM users WHERE email = $1 AND password = $2 AND "validé" = true', [email,password])
     .then(result => {
         if (result.rows.length === 0){
-            res.res.status(401).json(`Il n'existe pas de compte avec l'adresse mail suivante : ${email}, ou bien votre inscription n'a pas été validée`);
+            res.status(401).json(`Il n'existe pas de compte avec l'adresse mail ET mot de passe suivante : ${email}, ou bien votre inscription n'a pas été validée`);
             console.log(`Tentative de connexion de la part de ${email}`)
         }
         else{
@@ -24,7 +24,7 @@ router.post('/login', (req, res) => {
         }
         
     })
-    .catch(err => handleError(res, err, 'POST /coordonnees'));
+    .catch(err => handleError(res, err, 'POST /login'));
 });
 
 module.exports = router

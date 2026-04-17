@@ -2,6 +2,7 @@ const express = require('express'); // express
 const router = express.Router(); // routeur
 const pool = require('../db/pool.js'); // pool
 const { isEditor, isAdmin } = require('../middleware/roles.js'); // pour les roles (user,éditeur,admin)
+const { getIO } = require('../socketManager.js'); // getIO -> envoie a toutes les sockets
 
 
 //Affiche l'erreur côté serveur (node) et client(postman ou reactnative)
@@ -46,6 +47,7 @@ router.post('/membres', isEditor, (req, res) => {
     .then(result => {
         res.json(`Nouveau membre ${nom} ${prénom} ajouté !`);
         console.log(`Nouveau membre ${nom} ${prénom} ajouté !`);
+        getIO().emit('membre_ajouté', { nom: nom, prenom: prénom });
     })
     .catch(err => handleError(res, err, 'POST /membres'))
 });
@@ -58,6 +60,7 @@ router.patch('/membres/:id', isEditor, (req, res) => {
     pool.query(`UPDATE membres SET sexe='${sexe}', "prénom"='${prénom}', nom='${nom}', date_naissance='${date_naissance}', "date_décès"='${date_décès}', "informations_complémentaires"='${informations_complémentaires}', photo='${photo}', "privé"=${privé}, id_union=${id_union}, biologique=${biologique} WHERE id=${id}`)
     .then(result => {
         res.json(`Mise à jour du membre ${nom} ${prénom} réussie !`);
+        getIO().emit('membre_modifie', { id: id }); // on prévient tout le monde sur le serveur
         console.log(`Mise à jour du membre ${nom} ${prénom} réussie !`);
     })
     .catch(err => handleError(res, err, 'PATCH /membres'))
@@ -71,6 +74,7 @@ router.delete('/membres/:id', isAdmin, (req, res) => {
     pool.query(`DELETE FROM membres WHERE id = ${id};`) 
     .then(result => {
         res.json(`Suppression du membre id=${id} réussie !`);
+        getIO().emit('membre_supprimé', { id: id });
         console.log(`Suppression du membre id=${id} réussie !`);
     })
     .catch(err => handleError(res, err, 'DELETE /membres'))

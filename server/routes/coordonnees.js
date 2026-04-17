@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db/pool.js');
 const { isEditor, isAdmin } = require('../middleware/roles.js');
+const { getIO } = require('../socketManager.js'); // getIO -> envoie a toutes les sockets
+
 
 const handleError = (res, err, route) => {
     console.log(`Erreur ${route}:`, err.message);
@@ -35,6 +37,7 @@ router.post('/coordonnees', isEditor, (req, res) => {
     pool.query(`INSERT INTO "coordonnées" (id_membre, adresse, "téléphone", email) VALUES (${id_membre}, '${adresse}', '${téléphone}', '${email}')`)
     .then(result => {
         res.json(`Nouvelles coordonnées ajoutées pour membre id=${id_membre} !`);
+        getIO().emit('coordonées_ajoutées', { id : id_membre });
         console.log(`Nouvelles coordonnées ajoutées pour membre id=${id_membre} !`);
     })
     .catch(err => handleError(res, err, 'POST /coordonnees'));
@@ -47,6 +50,7 @@ router.patch('/coordonnees/:id', isEditor, (req, res) => {
     pool.query(`UPDATE "coordonnées" SET id_membre=${id_membre}, adresse='${adresse}', "téléphone"='${téléphone}', email='${email}' WHERE id=${id}`)
     .then(result => {
         res.json(`Coordonnées id=${id} mises à jour !`);
+        getIO().emit('coordonées_modifiées', { id : id_membre });
         console.log(`Coordonnées id=${id} mises à jour !`);
     })
     .catch(err => handleError(res, err, 'PATCH /coordonnees'));
@@ -58,6 +62,7 @@ router.delete('/coordonnees/:id', isAdmin , (req, res) => {
     pool.query(`DELETE FROM "coordonnées" WHERE id=${id}`)
     .then(result => {
         res.json(`Coordonnées id=${id} supprimées !`);
+        getIO().emit('coordonées_suprimées', { id : id });
         console.log(`Coordonnées id=${id} supprimées !`);
     })
     .catch(err => handleError(res, err, 'DELETE /coordonnees'));
