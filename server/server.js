@@ -8,6 +8,8 @@ const route_coordonnees = require('./routes/coordonnees.js');
 const route_logs = require('./routes/logs.js');
 const route_professions = require('./routes/professions.js');
 const route_login = require('./routes/login.js');
+const route_stats = require('./routes/stats.js');
+const route_recherche = require('./routes/recherche.js'); // recherche par nom/prénom + navigation familiale
 
 const verifyToken = require('./middleware/auth.js'); // vérifie le JWT à chaque requête protégée
 const socketManager = require('./socketManager.js'); // fichier intermédiaire pour partager io avec les routes
@@ -88,6 +90,8 @@ app.use(route_unions);
 app.use(route_coordonnees);
 app.use(route_logs);
 app.use(route_professions);
+app.use(route_stats);
+app.use(route_recherche); // recherche et navigation familiale (protégée par verifyToken)
 
 server.listen(3000, '0.0.0.0', () => {
     console.log("Server running");

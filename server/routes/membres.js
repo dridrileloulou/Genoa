@@ -1,8 +1,9 @@
-const express = require('express');
-const router = express.Router();
-const pool = require('../db/pool.js');
-const { isEditor, isAdmin } = require('../middleware/roles.js');
-const { getIO } = require('../socketManager.js');
+const express = require('express'); // express
+const router = express.Router(); // routeur
+const pool = require('../db/pool.js'); // pool
+const { isEditor, isAdmin } = require('../middleware/roles.js'); // pour les roles (user,éditeur,admin)
+const { getIO } = require('../socketManager.js'); // getIO -> envoie a toutes les sockets
+const logAction = require('../utils/logAction.js'); // enregistre les actions dans la table logs
 
 const handleError = (res, err, route) => {
   console.log(`Erreur ${route}:`, err.message);
@@ -52,9 +53,10 @@ router.post('/membres', isEditor, (req, res) => {
     [clean(sexe), prénom, clean(nom), clean(date_naissance), clean(date_décès), clean(id_user), clean(informations_complémentaires), clean(photo), privé, clean(id_union), clean(biologique)]
   )
     .then(result => {
-      res.json(`Nouveau membre ${nom} ${prénom} ajouté !`);
-      console.log(`Nouveau membre ${nom} ${prénom} ajouté !`);
-      getIO().emit('membre_ajouté', { nom: nom, prenom: prénom });
+        res.json(`Nouveau membre ${nom} ${prénom} ajouté !`);
+        console.log(`Nouveau membre ${nom} ${prénom} ajouté !`);
+        getIO().emit('membre_ajouté', { nom: nom, prenom: prénom });
+        logAction(req.user.id, 'membres', null, 'POST'); // log de l'ajout
     })
     .catch(err => handleError(res, err, 'POST /membres'));
 });
@@ -74,9 +76,10 @@ router.patch('/membres/:id', isEditor, (req, res) => {
     [clean(sexe), prénom, clean(nom), clean(date_naissance), clean(date_décès), clean(informations_complémentaires), clean(photo), privé, clean(id_union), clean(biologique), id]
   )
     .then(result => {
-      res.json(`Mise à jour du membre ${nom} ${prénom} réussie !`);
-      getIO().emit('membre_modifie', { id: id });
-      console.log(`Mise à jour du membre ${nom} ${prénom} réussie !`);
+        res.json(`Mise à jour du membre ${nom} ${prénom} réussie !`);
+        getIO().emit('membre_modifie', { id: id }); // on prévient tout le monde sur le serveur
+        console.log(`Mise à jour du membre ${nom} ${prénom} réussie !`);
+        logAction(req.user.id, 'membres', id, 'PATCH'); // log de la modification
     })
     .catch(err => handleError(res, err, 'PATCH /membres'));
 });
@@ -86,9 +89,10 @@ router.delete('/membres/:id', isAdmin, (req, res) => {
   const id = req.params.id;
   pool.query(`DELETE FROM membres WHERE id = ${id};`)
     .then(result => {
-      res.json(`Suppression du membre id=${id} réussie !`);
-      getIO().emit('membre_supprimé', { id: id });
-      console.log(`Suppression du membre id=${id} réussie !`);
+        res.json(`Suppression du membre id=${id} réussie !`);
+        getIO().emit('membre_supprimé', { id: id });
+        console.log(`Suppression du membre id=${id} réussie !`);
+        logAction(req.user.id, 'membres', id, 'DELETE'); // log de la suppression
     })
     .catch(err => handleError(res, err, 'DELETE /membres'));
 });

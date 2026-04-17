@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db/pool.js');
 const { isEditor, isAdmin } = require('../middleware/roles.js');
-const { getIO } = require('../socketManager.js');
+const { getIO } = require('../socketManager.js'); // getIO -> envoie a toutes les sockets
+const logAction = require('../utils/logAction.js'); // enregistre les actions dans la table logs
 
 const handleError = (res, err, route) => {
   console.log(`Erreur ${route}:`, err.message);
@@ -46,9 +47,10 @@ router.post('/unions', isEditor, (req, res) => {
     [clean(id_membre_1), clean(id_membre_2), clean(date_union), clean(date_séparation)]
   )
     .then(result => {
-      res.json(`Nouvelle union ajoutée entre ${id_membre_1} et ${id_membre_2} !`);
-      getIO().emit('union_ajoutée', { id_membre_1, id_membre_2 });
-      console.log(`Nouvelle union ajoutée entre ${id_membre_1} et ${id_membre_2} !`);
+        res.json(`Nouvelle union ajoutée entre ${id_membre_1} et ${id_membre_2} !`);
+        getIO().emit('union_ajoutée', { id : id_membre });
+        console.log(`Nouvelle union ajoutée entre ${id_membre_1} et ${id_membre_2} !`);
+        logAction(req.user.id, 'unions', null, 'POST'); // log de l'ajout
     })
     .catch(err => handleError(res, err, 'POST /unions'));
 });
@@ -65,9 +67,10 @@ router.patch('/unions/:id', isEditor, (req, res) => {
     [clean(id_membre_1), clean(id_membre_2), clean(date_union), clean(date_séparation), id]
   )
     .then(result => {
-      res.json(`Union mise à jour !`);
-      getIO().emit('Union_modifiée', { id });
-      console.log(`Union mise à jour id=${id} !`);
+        res.json(`Union mise à jour entre ${id_membre_1} et ${id_membre_2} !`);
+        getIO().emit('Union_modifiée', { id : id_membre });
+        console.log(`Union mise à jour entre ${id_membre_1} et ${id_membre_2} !`);
+        logAction(req.user.id, 'unions', id, 'PATCH'); // log de la modification
     })
     .catch(err => handleError(res, err, 'PATCH /unions'));
 });
@@ -77,9 +80,10 @@ router.delete('/unions/:id', isAdmin, (req, res) => {
   const id = req.params.id;
   pool.query(`DELETE FROM unions WHERE id=${id}`)
     .then(result => {
-      res.json(`Union supprimée !`);
-      getIO().emit('Union_supprimée', { id });
-      console.log(`Union supprimée id=${id} !`);
+        res.json(`Union supprimée entre ${id_membre_1} et ${id_membre_2}!`);
+        getIO().emit('Union_supprimée', { id : id });
+        console.log(`Union supprimée entre ${id_membre_1} et ${id_membre_2}!`);
+        logAction(req.user.id, 'unions', id, 'DELETE'); // log de la suppression
     })
     .catch(err => handleError(res, err, 'DELETE /unions'));
 });
