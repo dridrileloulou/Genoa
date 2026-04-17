@@ -1,5 +1,5 @@
 import { io } from 'socket.io-client';
 
-const socket = io('http://172.21.4.73:3000'); // remplacer par son IP locale WSL
+const socket = io('http://localhost:3000');
 
 export default socket;

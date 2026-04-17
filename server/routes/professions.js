@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db/pool.js');
 const { isEditor, isAdmin } = require('../middleware/roles.js');
+const { getIO } = require('../socketManager.js'); // getIO -> envoie a toutes les sockets
 
 const handleError = (res, err, route) => {
     console.log(`Erreur ${route}:`, err.message);
@@ -35,6 +36,7 @@ router.post('/professions', isEditor, (req, res) => {
     pool.query(`INSERT INTO professions (id_membre, "métier", "date_début", date_fin) VALUES (${id_membre}, '${métier}', '${date_début}', '${date_fin}')`)
     .then(result => {
         res.json(`Nouvelle profession ajoutée pour membre id=${id_membre} !`);
+        getIO().emit('profession_ajoutée', { id : id_membre });
         console.log(`Nouvelle profession ajoutée pour membre id=${id_membre} !`);
     })
     .catch(err => handleError(res, err, 'POST /professions'));
@@ -47,6 +49,7 @@ router.patch('/professions/:id', isEditor, (req, res) => {
     pool.query(`UPDATE professions SET id_membre=${id_membre}, "métier"='${métier}', "date_début"='${date_début}', date_fin='${date_fin}' WHERE id=${id}`)
     .then(result => {
         res.json(`Profession id=${id} mise à jour !`);
+        getIO().emit('profession_modifiée', { id : id_membre });
         console.log(`Profession id=${id} mise à jour !`);
     })
     .catch(err => handleError(res, err, 'PATCH /professions'));
@@ -58,6 +61,7 @@ router.delete('/professions/:id', isAdmin ,(req, res) => {
     pool.query(`DELETE FROM professions WHERE id=${id}`)
     .then(result => {
         res.json(`Profession id=${id} supprimée !`);
+        getIO().emit('profession_supprimée', { id : id });
         console.log(`Profession id=${id} supprimée !`);
     })
     .catch(err => handleError(res, err, 'DELETE /professions'));
