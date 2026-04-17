@@ -11,7 +11,7 @@ const route_login = require('./routes/login.js');
 
 const verifyToken = require('./middleware/auth.js'); // vérifie le JWT à chaque requête protégée
 const socketManager = require('./socketManager.js'); // fichier intermédiaire pour partager io avec les routes
-const pool = require('./db.js'); // connexion à la base de données (adapte le chemin si besoin)
+const pool = require('./db/pool.js'); // connexion à la base de données
 
 const express = require('express');
 const cors = require('cors');
