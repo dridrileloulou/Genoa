@@ -17,7 +17,7 @@ export function CreateUser({ visible, onClose, onUserCreated }) {
     setLoading(true);
 
     try {
-      const res = await fetch('http://172.20.10.2:3000/users', {
+      const res = await fetch('http://localhost:3000/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -54,10 +54,17 @@ export function SeeUser({ visible, onClose }) {
     }
   };
 
+  // Cycle des rôles : lecteur → éditeur → admin → lecteur
+  const nextRole = (current) => {
+    if (current === 'lecteur') return 'éditeur';
+    if (current === 'éditeur') return 'admin';
+    return 'lecteur';
+  };
+
   const toggleAdmin = async (id, currentRole) => {
     try {
       const token = await AsyncStorage.getItem('userToken');
-      const newRole = currentRole === 'admin' ? 'lecteur' : 'admin';
+      const newRole = nextRole(currentRole);
       const res = await fetch(`http://localhost:3000/users/${id}`, {
         method: 'PATCH',
         headers: {
@@ -130,7 +137,7 @@ export function SeeUser({ visible, onClose }) {
                         <Text style={styles.btnText}>Delete</Text>
                       </Pressable>
                       <Pressable style={styles.roleBtn} onPress={() => toggleAdmin(user.id, user.role)}>
-                        <Text style={styles.btnText}>Toggle Admin</Text>
+                        <Text style={styles.btnText}>→ {nextRole(user.role)}</Text>
                       </Pressable>
                       <Pressable style={styles.roleBtn} onPress={() => toggleValidation(user.id, user.validé)}>
                         <Text style={styles.btnText}>{user.validé ? 'Invalidate' : 'Validate'}</Text>
