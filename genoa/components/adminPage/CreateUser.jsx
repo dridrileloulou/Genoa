@@ -7,6 +7,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useState } from 'react';
+import { API_URL } from '@/constants/api';
 
 export function CreateUser({ visible, onClose, onUserCreated }) {
   const [email, setEmail] = useState('');
@@ -17,7 +18,7 @@ export function CreateUser({ visible, onClose, onUserCreated }) {
     setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:3000/users', {
+      const res = await fetch(`${API_URL}/users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

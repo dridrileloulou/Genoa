@@ -2,6 +2,7 @@ import { View, Text, TextInput, StyleSheet, Pressable } from 'react-native';
 import { useState } from 'react';
 import { SignUpModal } from './SignUpModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '@/constants/api';
 
 export function Login({ onLoginSuccess }) {
   const [email, setEmail] = useState('');
@@ -18,7 +19,7 @@ export function Login({ onLoginSuccess }) {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/login', {
+      const response = await fetch(`${API_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })

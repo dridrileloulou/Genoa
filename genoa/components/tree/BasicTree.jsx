@@ -10,8 +10,9 @@ import {
 } from "d3-dag";
 
 import { buildFamilyGraph, toDag } from "../../utils/buildFamilyGraph";
+import { API_URL } from '@/constants/api';
 
-const API = "http://localhost:3000";
+const API = API_URL;
 
 export default function BasicTree({ token }) {
   const [members, setMembers] = useState([]);

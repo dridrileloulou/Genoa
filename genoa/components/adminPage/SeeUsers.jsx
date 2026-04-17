@@ -9,6 +9,7 @@ import {
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CreateUser } from './CreateUser';
+import { API_URL } from '@/constants/api';
 
 export function SeeUser({ visible, onClose }) {
   const [loading, setLoading] = useState(false);
@@ -19,7 +20,7 @@ export function SeeUser({ visible, onClose }) {
     setLoading(true);
     try {
       const token = await AsyncStorage.getItem('userToken');
-      const response = await fetch('http://localhost:3000/users', {
+      const response = await fetch(`${API_URL}/users`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -42,7 +43,7 @@ export function SeeUser({ visible, onClose }) {
   const deleteUser = async (id) => {
     try {
       const token = await AsyncStorage.getItem('userToken');
-      const res = await fetch(`http://localhost:3000/users/${id}`, {
+      const res = await fetch(`${API_URL}/users/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -65,7 +66,7 @@ export function SeeUser({ visible, onClose }) {
     try {
       const token = await AsyncStorage.getItem('userToken');
       const newRole = nextRole(currentRole);
-      const res = await fetch(`http://localhost:3000/users/${id}`, {
+      const res = await fetch(`${API_URL}/users/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -89,7 +90,7 @@ export function SeeUser({ visible, onClose }) {
   const toggleValidation = async (id, current) => {
     try {
       const token = await AsyncStorage.getItem('userToken');
-      const res = await fetch(`http://localhost:3000/users/${id}`, {
+      const res = await fetch(`${API_URL}/users/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

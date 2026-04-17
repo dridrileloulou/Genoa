@@ -7,6 +7,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from 'jwt-decode';
+import { API_URL } from '@/constants/api';
 
 // Création du contexte (valeur par défaut = null, sera fournie par le Provider)
 const AuthContext = createContext(null);
@@ -55,7 +56,7 @@ export function AuthProvider({ children }) {
   // Récupère l'email de l'utilisateur connecté depuis l'API
   const fetchEmail = async (id, token) => {
     try {
-      const response = await fetch(`http://localhost:3000/users/${id}`, {
+      const response = await fetch(`${API_URL}/users/${id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {

@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '@/constants/api';
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = API_URL;
 
 const getToken = async () => AsyncStorage.getItem('userToken');
 

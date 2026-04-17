@@ -3,16 +3,20 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '@/constants/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function StatsScreen() {
+  const { connected, loading: authLoading } = useAuth();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const fetchStats = async () => {
+    setLoading(true);
     try {
       const token = await AsyncStorage.getItem('userToken');
-      const response = await fetch('http://localhost:3000/stats', {
+      const response = await fetch(`${API_URL}/stats`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -31,13 +35,26 @@ export default function StatsScreen() {
   };
 
   useEffect(() => {
-    fetchStats();
-  }, []);
+    if (connected) {
+      fetchStats();
+    } else {
+      setLoading(false);
+    }
+  }, [connected]);
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <ThemedView style={styles.container}>
         <ActivityIndicator size="large" color="#ffffff" />
+      </ThemedView>
+    );
+  }
+
+  if (!connected) {
+    return (
+      <ThemedView style={styles.container}>
+        <ThemedText type="title" style={styles.title}>Statistiques</ThemedText>
+        <ThemedText style={styles.error}>Connectez-vous pour voir les statistiques.</ThemedText>
       </ThemedView>
     );
   }

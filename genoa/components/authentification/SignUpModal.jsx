@@ -1,5 +1,6 @@
 import { View, Text, TextInput, StyleSheet, Pressable, Modal } from 'react-native';
 import { useState } from 'react';
+import { API_URL } from '@/constants/api';
 
 export function SignUpModal({ visible, onClose }) {
   const [email, setEmail] = useState('');
@@ -15,7 +16,7 @@ export function SignUpModal({ visible, onClose }) {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/users', {
+      const response = await fetch(`${API_URL}/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })

@@ -1,4 +1,4 @@
-import { StyleSheet, View, ScrollView, Dimensions } from 'react-native';
+import { StyleSheet, View, ScrollView, Dimensions, Pressable } from 'react-native';
 import {  useState, useCallback} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from 'jwt-decode';
@@ -63,7 +63,7 @@ export default function HomeScreen() {
         <View style={styles.cards}>
           {connected ? (
             <Link href="/tree?mode=mine" asChild>
-              <View style={styles.cardPrimary}>
+              <Pressable style={styles.cardPrimary}>
                 <View style={styles.cardLeft}>
                   <ThemedText style={styles.cardEmoji}>🌳</ThemedText>
                   <View>
@@ -72,7 +72,7 @@ export default function HomeScreen() {
                   </View>
                 </View>
                 <ThemedText style={styles.chevron}>›</ThemedText>
-              </View>
+              </Pressable>
             </Link>
           ) : (
             <View style={styles.cardDisabled}>
@@ -87,7 +87,7 @@ export default function HomeScreen() {
           )}
 
           <Link href="/tree?mode=all" asChild>
-            <View style={styles.card}>
+            <Pressable style={styles.card}>
               <View style={styles.cardLeft}>
                 <ThemedText style={styles.cardEmoji}>🌍</ThemedText>
                 <View>
@@ -96,7 +96,7 @@ export default function HomeScreen() {
                 </View>
               </View>
               <ThemedText style={styles.chevron}>›</ThemedText>
-            </View>
+            </Pressable>
           </Link>
         </View>
       </ThemedView>

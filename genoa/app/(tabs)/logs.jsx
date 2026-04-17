@@ -4,6 +4,7 @@ import { ThemedView } from '@/components/themed-view';
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@/contexts/AuthContext';
+import { API_URL } from '@/constants/api';
 
 // =====================================================
 // PAGE LOGS : historique des modifications (admin uniquement)
@@ -19,7 +20,7 @@ export default function LogsScreen() {
   const fetchLogs = async () => {
     try {
       const token = await AsyncStorage.getItem('userToken');
-      const response = await fetch('http://localhost:3000/logs', {
+      const response = await fetch(`${API_URL}/logs`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 

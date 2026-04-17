@@ -3,6 +3,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '@/constants/api';
 
 // =====================================================
 // PAGE RECHERCHE & NAVIGATION FAMILIALE
@@ -33,7 +34,7 @@ export default function RechercheScreen() {
     setLoading(true);
     try {
       const token = await AsyncStorage.getItem('userToken');
-      const response = await fetch(`http://localhost:3000/recherche?q=${encodeURIComponent(text)}`, {
+      const response = await fetch(`${API_URL}/recherche?q=${encodeURIComponent(text)}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -57,10 +58,10 @@ export default function RechercheScreen() {
 
       // On lance les 4 requêtes en parallèle pour gagner du temps
       const [parentsRes, enfantsRes, fratrieRes, conjointsRes] = await Promise.all([
-        fetch(`http://localhost:3000/recherche/${membre.id}/parents`, { headers }),
-        fetch(`http://localhost:3000/recherche/${membre.id}/enfants`, { headers }),
-        fetch(`http://localhost:3000/recherche/${membre.id}/fratrie`, { headers }),
-        fetch(`http://localhost:3000/recherche/${membre.id}/conjoints`, { headers }),
+        fetch(`${API_URL}/recherche/${membre.id}/parents`, { headers }),
+        fetch(`${API_URL}/recherche/${membre.id}/enfants`, { headers }),
+        fetch(`${API_URL}/recherche/${membre.id}/fratrie`, { headers }),
+        fetch(`${API_URL}/recherche/${membre.id}/conjoints`, { headers }),
       ]);
 
       const [parents, enfants, fratrie, conjoints] = await Promise.all([

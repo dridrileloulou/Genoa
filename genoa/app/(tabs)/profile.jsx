@@ -5,7 +5,8 @@ import { useState, useEffect } from 'react';
 import { Login } from '@/components/authentification/Login';
 import { AdminPage } from '@/components/adminPage/AdminPage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAuth } from '@/contexts/AuthContext'; // Contexte d'auth global
+import { useAuth } from '@/contexts/AuthContext';
+import { API_URL } from '@/constants/api';
 
 export default function ProfileScreen() {
   // On utilise le contexte global au lieu de gérer l'auth en local
@@ -16,7 +17,7 @@ export default function ProfileScreen() {
   const fetchUserInfo = async () => {
     try {
       const token = await AsyncStorage.getItem('userToken');
-      const response = await fetch(`http://localhost:3000/users/${userId}`, {
+      const response = await fetch(`${API_URL}/users/${userId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
