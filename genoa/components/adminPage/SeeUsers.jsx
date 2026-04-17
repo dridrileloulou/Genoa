@@ -18,7 +18,7 @@ export function SeeUser({ visible, onClose }) {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const token = await AsyncStorage.getItem('token');
+      const token = await AsyncStorage.getItem('userToken');
       const response = await fetch('http://localhost:3000/users', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -41,7 +41,7 @@ export function SeeUser({ visible, onClose }) {
 
   const deleteUser = async (id) => {
     try {
-      const token = await AsyncStorage.getItem('token');
+      const token = await AsyncStorage.getItem('userToken');
       const res = await fetch(`http://localhost:3000/users/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -56,7 +56,7 @@ export function SeeUser({ visible, onClose }) {
 
   const toggleAdmin = async (id, currentRole) => {
     try {
-      const token = await AsyncStorage.getItem('token');
+      const token = await AsyncStorage.getItem('userToken');
       const newRole = currentRole === 'admin' ? 'lecteur' : 'admin';
       const res = await fetch(`http://localhost:3000/users/${id}`, {
         method: 'PATCH',
@@ -77,7 +77,7 @@ export function SeeUser({ visible, onClose }) {
 
   const toggleValidation = async (id, current) => {
     try {
-      const token = await AsyncStorage.getItem('token');
+      const token = await AsyncStorage.getItem('userToken');
       const res = await fetch(`http://localhost:3000/users/${id}`, {
         method: 'PATCH',
         headers: {

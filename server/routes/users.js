@@ -68,22 +68,34 @@ router.post('/users', (req, res) => { // /post <email> <password>
     
 });
 
-// -- PATCH -- 
+// -- PATCH --
+// Mise à jour partielle : on ne modifie que les champs envoyés dans le body
+// Retourne l'utilisateur mis à jour pour que le front puisse rafraîchir l'affichage
 router.patch('/users/:id', verifyToken, isAdmin, (req, res) => {
+    const id = req.params.id;
+    const { email, password, role, valide } = req.body;
 
-    const email = req.body.email 
-    const password = req.body.password
-    const role = req.body.role
-    const validé = req.body.valide
+    // On construit dynamiquement la requête avec seulement les champs fournis
+    const fields = [];
+    const values = [];
+    let idx = 1;
 
-    const id = req.params.id
-    pool.query(`UPDATE users SET email = '${email}',password = '${password}',role = '${role}',"validé" = '${validé}' WHERE id = ${id} ;`) 
+    if (email !== undefined) { fields.push(`email = $${idx++}`); values.push(email); }
+    if (password !== undefined) { fields.push(`password = $${idx++}`); values.push(password); }
+    if (role !== undefined) { fields.push(`role = $${idx++}`); values.push(role); }
+    if (valide !== undefined) { fields.push(`"validé" = $${idx++}`); values.push(valide); }
+
+    if (fields.length === 0) {
+        return res.status(400).json({ error: 'Aucun champ à modifier' });
+    }
+
+    values.push(id); // dernier paramètre = id pour le WHERE
+    pool.query(`UPDATE users SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`, values)
     .then(result => {
-        res.json(`Mise à jour réussie sur l'utilisateur ${email} !`);
-        console.log(`Mise à jour réussie sur l'utilisateur ${email} !`);
+        res.json(result.rows[0]); // retourne l'user mis à jour
+        console.log(`Mise à jour réussie sur l'utilisateur id=${id} !`);
     })
     .catch(err => handleError(res, err, 'PATCH /users'))
-    
 });
 
 // -- DELETE -- 
