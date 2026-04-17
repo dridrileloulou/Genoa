@@ -9,7 +9,6 @@ const route_logs = require('./routes/logs.js');
 const route_professions = require('./routes/professions.js');
 const route_login = require('./routes/login.js');
 const verifyToken = require('./middleware/auth.js');
-//
 
 
 const express = require('express');
@@ -17,6 +16,19 @@ const cors = require('cors');
 const app = express(); 
 app.use(cors());
 app.use(express.json());
+
+// gestion des Socket
+
+const http = require('http');
+const { Server } = require('socket.io');
+const server = http.createServer(app);
+const io = new Server(server);
+
+io.on("connection",(socket) => {
+    console.log(`Nouvelle connexion de la part du client ${socket}`);
+});
+
+//
 
 // Attention, l'odre des routes comptes
 
@@ -32,6 +44,6 @@ app.use(route_coordonnees)
 app.use(route_logs)
 app.use(route_professions)
 
-app.listen(3000, '0.0.0.0', () => {
+server.listen(3000, '0.0.0.0', () => {
   console.log("Server running");
 });
