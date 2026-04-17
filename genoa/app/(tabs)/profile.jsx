@@ -5,8 +5,8 @@ import { Component } from 'react';
 import { Login } from '@/components/authentification/Login';
 import { AdminPage } from '@/components/adminPage/AdminPage';
 
-const connected = true; // Simulate a connection status
-const isAdmin = true; // Simulate an admin status
+const connected = false; // Simulate a connection status
+const isAdmin = false; // Simulate an admin status
 
 
 export default function ProfileScreen() {
