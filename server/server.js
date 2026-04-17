@@ -20,6 +20,7 @@ const { Server } = require('socket.io');
 
 const app = express();
 app.use(cors());
+app.options('/{*path}', cors());// pour les pré-requêtes CORS avec certaines méthodes (ex: PUT, DELETE)
 app.use(express.json()); // permet de lire le JSON dans req.body
 
 const server = http.createServer(app); // on greffe Express sur le serveur HTTP
