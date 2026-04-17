@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Pressable, Text, StyleSheet } from 'react-native';
+import { Pressable, Text, View, StyleSheet } from 'react-native';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -10,21 +10,28 @@ import { useAuth } from '@/contexts/AuthContext'; // Contexte d'auth pour le bou
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-  const { connected, logout } = useAuth(); // état de connexion + fonction de déconnexion
+  const { connected, userEmail, role, logout } = useAuth();
 
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        // Header visible avec bouton logout à droite (si connecté)
         headerShown: true,
         headerStyle: { backgroundColor: '#0F172A' },
         headerTintColor: '#ffffff',
-        // Bouton logout affiché dans le coin supérieur droit de toutes les pages
+        // Email + rôle affichés à gauche du header (si connecté)
+        headerLeft: () =>
+          connected && userEmail ? (
+            <View style={headerStyles.userInfo}>
+              <Text style={headerStyles.email} numberOfLines={1}>{userEmail}</Text>
+              <Text style={headerStyles.role}>{role}</Text>
+            </View>
+          ) : null,
+        // Bouton logout affiché à droite du header (si connecté)
         headerRight: () =>
           connected ? (
-            <Pressable onPress={logout} style={logoutStyles.button}>
-              <Text style={logoutStyles.text}>Déconnexion</Text>
+            <Pressable onPress={logout} style={headerStyles.logoutButton}>
+              <Text style={headerStyles.logoutText}>Déconnexion</Text>
             </Pressable>
           ) : null,
         tabBarButton: HapticTab,
@@ -69,16 +76,29 @@ export default function TabLayout() {
   );
 }
 
-// Styles du bouton de déconnexion dans le header
-const logoutStyles = StyleSheet.create({
-  button: {
+// Styles du header (info utilisateur + bouton déconnexion)
+const headerStyles = StyleSheet.create({
+  userInfo: {
+    marginLeft: 14,
+    maxWidth: 180,
+  },
+  email: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  role: {
+    color: '#94A3B8',
+    fontSize: 11,
+  },
+  logoutButton: {
     marginRight: 14,
     backgroundColor: '#DC2626',
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 8,
   },
-  text: {
+  logoutText: {
     color: '#ffffff',
     fontSize: 13,
     fontWeight: '600',

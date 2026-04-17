@@ -18,6 +18,7 @@ export function AuthProvider({ children }) {
   const [connected, setConnected] = useState(false);
   const [role, setRole] = useState(null);       // 'admin', 'éditeur', 'lecteur'
   const [userId, setUserId] = useState(null);    // id de l'utilisateur connecté
+  const [userEmail, setUserEmail] = useState(null); // email de l'utilisateur connecté
   const [loading, setLoading] = useState(true);  // true tant qu'on vérifie le token au démarrage
 
   // Vérifie le token stocké dans AsyncStorage au lancement de l'app
@@ -33,6 +34,8 @@ export function AuthProvider({ children }) {
           setConnected(true);
           setRole(decoded.role);
           setUserId(decoded.id);
+          // Récupérer l'email de l'utilisateur depuis l'API
+          fetchEmail(decoded.id, token);
         } else {
           // Token expiré → on le supprime
           await AsyncStorage.removeItem('userToken');
@@ -49,11 +52,27 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // Récupère l'email de l'utilisateur connecté depuis l'API
+  const fetchEmail = async (id, token) => {
+    try {
+      const response = await fetch(`http://localhost:3000/users/${id}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.length > 0) setUserEmail(data[0].email);
+      }
+    } catch (err) {
+      console.error('Erreur récupération email:', err);
+    }
+  };
+
   // Remet tout à zéro (état déconnecté)
   const resetState = () => {
     setConnected(false);
     setRole(null);
     setUserId(null);
+    setUserEmail(null);
   };
 
   // Fonction de déconnexion — appelable depuis n'importe quel composant via useAuth()
@@ -73,7 +92,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ connected, role, userId, loading, logout, onLoginSuccess }}>
+    <AuthContext.Provider value={{ connected, role, userId, userEmail, loading, logout, onLoginSuccess }}>
       {children}
     </AuthContext.Provider>
   );
