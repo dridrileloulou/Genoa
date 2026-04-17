@@ -1,71 +1,103 @@
-import { Button } from '@react-navigation/elements';
-import { View, Text, TextInput, StyleSheet, Pressable, Modal } from 'react-native';
-import { Href, Link } from 'expo-router';
-import { openBrowserAsync, WebBrowserPresentationStyle } from 'expo-web-browser';
+import { View, Text, TextInput, StyleSheet, Pressable } from 'react-native';
 import { useState } from 'react';
 import { SignUpModal } from './SignUpModal';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-
-
-
-export function Login() {
+export function Login({ onLoginSuccess }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
-  
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      alert('Veuillez remplir tous les champs');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:3000/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.token) {
+        // Stocker le token
+        await AsyncStorage.setItem('userToken', data.token);
+        
+        alert('Connexion réussie !');
+        setEmail('');
+        setPassword('');
+        
+        // Appeler le callback pour mettre à jour l'état de connexion
+        if (onLoginSuccess) {
+          onLoginSuccess();
+        }
+      } else {
+        alert(data.error || "Identifiants incorrects ou compte non validé");
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Erreur de connexion : ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Login</Text>
-      <Pressable
-        style={({ pressed }) => [
-          styles.googleButton,
-          { opacity: pressed ? 0.85 : 1 }
-        ]}
-        onPress={() => {
-          openBrowserAsync('https://accounts.google.com/signin', {
-            presentationStyle: WebBrowserPresentationStyle.FULLSCREEN,
-          });
-        }}
-      >
-        <Text style={styles.googleButtonText}>🔐 Login with Google</Text>
-      </Pressable>
-      <Text style={styles.label}>Username or Email</Text>
+
+      <Text style={styles.label}>Email</Text>
       <TextInput
         style={styles.input}
-        placeholder="Enter your username or email"
+        placeholder="Enter your email"
         placeholderTextColor="#4a6b4a"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+        autoCapitalize="none"
       />
+
       <Text style={styles.label}>Password</Text>
       <TextInput
         style={styles.input}
         placeholder="Enter your password"
         placeholderTextColor="#4a6b4a"
         secureTextEntry
+        value={password}
+        onChangeText={setPassword}
       />
+
       <Pressable
         style={({ pressed }) => [
           styles.loginButton,
-          { opacity: pressed ? 0.85 : 1 }
+          { opacity: pressed || loading ? 0.6 : 1 }
         ]}
-        onPress={() => {
-          // Handle login logic here
-        }}
+        onPress={handleLogin}
+        disabled={loading}
       >
-        <Text style={styles.loginButtonText}>🚀 Login</Text>
+        <Text style={styles.loginButtonText}>
+          {loading ? '⏳ Connexion...' : '🚀 Login'}
+        </Text>
       </Pressable>
+
       <Text style={styles.signupText}>
         Don't have an account?{' '}
         <Pressable onPress={() => setModalVisible(true)}>
           <Text style={styles.link}>Sign up</Text>
         </Pressable>
       </Text>
+
       <SignUpModal 
         visible={modalVisible} 
         onClose={() => setModalVisible(false)} 
       />
-      <Text style={styles.signupText}>
-        Forgot your password? <Link href="/reset-password" style={styles.link}>Reset it</Link>
-      </Text>
     </View>
   );
 }
@@ -113,28 +145,6 @@ const styles = StyleSheet.create({
   link: {
     color: '#2d7a2d',
     fontWeight: '700',
-  },
-  googleButton: {
-    backgroundColor: '#ffffff',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  googleButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1f2937',
-    letterSpacing: 0.5,
   },
   loginButton: {
     backgroundColor: '#2d7a2d',

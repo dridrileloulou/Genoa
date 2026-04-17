@@ -53,15 +53,40 @@ export function SeeUser({ visible, onClose }) {
     }
   };
 
-  // PATCH ROLE
-  const updateRole = async (id) => {
+  // 🔄 TOGGLE ADMIN
+  const toggleAdmin = async (id, currentRole) => {
+    try {
+      const newRole = currentRole === 'admin' ? 'lecteur' : 'admin';
+
+      const res = await fetch(`http://172.20.10.2:3000/users/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ role: newRole }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setUsers(prev =>
+          prev.map(u => (u.id === id ? data : u))
+        );
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // ✅ TOGGLE VALIDATION
+  const toggleValidation = async (id, current) => {
     try {
       const res = await fetch(`http://172.20.10.2:3000/users/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ role: 'admin' }),
+        body: JSON.stringify({ valide: !current }),
       });
 
       const data = await res.json();
@@ -81,10 +106,8 @@ export function SeeUser({ visible, onClose }) {
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
 
-          {/* TITLE */}
           <Text style={styles.modalTitle}>Users</Text>
 
-          {/* ADD USER BUTTON */}
           <Pressable
             style={styles.addUserButton}
             onPress={() => setCreateVisible(true)}
@@ -92,14 +115,12 @@ export function SeeUser({ visible, onClose }) {
             <Text style={styles.addUserText}>+ Add User</Text>
           </Pressable>
 
-          {/* CREATE USER MODAL */}
           <CreateUser
             visible={createVisible}
             onClose={() => setCreateVisible(false)}
             onUserCreated={fetchUsers}
           />
 
-          {/* LIST */}
           {loading ? (
             <Text style={styles.loading}>Loading...</Text>
           ) : (
@@ -113,7 +134,11 @@ export function SeeUser({ visible, onClose }) {
                     </Text>
 
                     <Text style={styles.role}>
-                      Role: {user.role || 'user'}
+                      Role: {user.role}
+                    </Text>
+
+                    <Text style={styles.role}>
+                      Validé: {user.validé ? '✅ Oui' : '❌ Non'}
                     </Text>
 
                     <View style={styles.actions}>
@@ -127,9 +152,20 @@ export function SeeUser({ visible, onClose }) {
 
                       <Pressable
                         style={styles.roleBtn}
-                        onPress={() => updateRole(user.id)}
+                        onPress={() => toggleAdmin(user.id, user.role)}
                       >
-                        <Text style={styles.btnText}>Make Admin</Text>
+                        <Text style={styles.btnText}>
+                          Toggle Admin
+                        </Text>
+                      </Pressable>
+
+                      <Pressable
+                        style={styles.roleBtn}
+                        onPress={() => toggleValidation(user.id, user.validé)}
+                      >
+                        <Text style={styles.btnText}>
+                          {user.validé ? 'Invalidate' : 'Validate'}
+                        </Text>
                       </Pressable>
 
                     </View>
@@ -144,7 +180,6 @@ export function SeeUser({ visible, onClose }) {
             </ScrollView>
           )}
 
-          {/* CLOSE */}
           <Pressable style={styles.closeBtn} onPress={onClose}>
             <Text style={styles.btnText}>Close</Text>
           </Pressable>

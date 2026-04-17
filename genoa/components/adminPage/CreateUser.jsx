@@ -30,7 +30,7 @@ export function CreateUser({ visible, onClose, onUserCreated }) {
       if (res.ok) {
         setEmail('');
         setPassword('');
-        onUserCreated?.(); // refresh list
+        onUserCreated?.();
         onClose();
       } else {
         alert(data.error || 'Error');
@@ -79,6 +79,8 @@ export function CreateUser({ visible, onClose, onUserCreated }) {
     </Modal>
   );
 }
+
+
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
