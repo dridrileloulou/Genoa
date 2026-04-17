@@ -1,12 +1,6 @@
-import React, { useMemo } from "react";
-import { View } from "react-native";
-import Svg, { Circle, Line, Text, G } from "react-native-svg";
-
-import { GestureDetector, Gesture } from "react-native-gesture-handler";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-} from "react-native-reanimated";
+import React, { useEffect, useMemo, useState } from "react";
+import { View, Text, Pressable } from "react-native";
+import Svg, { Circle, Line, Text as SvgText, G } from "react-native-svg";
 
 import {
   graphStratify,
@@ -15,20 +9,75 @@ import {
   coordCenter,
 } from "d3-dag";
 
-export default function BasicTree() {
-  // 📊 Données
-  const data = [
-    { id: "A" },
-    { id: "B", parentIds: ["A"] },
-    { id: "C", parentIds: ["A"] },
-    { id: "D", parentIds: ["B"] },
-    { id: "E", parentIds: ["B"] },
-    { id: "F", parentIds: ["C"] },
-  ];
+import { buildFamilyGraph, toDag } from "../../utils/buildFamilyGraph";
 
-  // 🌳 Layout DAG
+const API = "http://localhost:3000";
+
+export default function BasicTree({ token }) {
+  const [members, setMembers] = useState([]);
+  const [unions, setUnions] = useState([]);
+  const [user, setUser] = useState(null);
+  const safeMembers = Array.isArray(members) ? members : [];
+  const safeUnions = Array.isArray(unions) ? unions : [];
+
+
+  const isConnected = !!token;
+
+  // 🔐 decode user (role + id)
+  useEffect(() => {
+    if (!token) return;
+
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      setUser(payload);
+    } catch (e) {
+      setUser(null);
+    }
+  }, [token]);
+
+  // 📦 FETCH (public access autorisé)
+  const load = async () => {
+    const headers = token
+      ? { Authorization: token }
+      : undefined;
+
+    const [mRes, uRes] = await Promise.all([
+      fetch(`${API}/membres`, { headers }),
+      fetch(`${API}/unions`, { headers }),
+    ]);
+
+    const mData = await mRes.json();
+    const uData = await uRes.json();
+
+    console.log("membres:", mData);
+    console.log("unions:", uData);
+
+    // 🛡️ SAFE GUARD (IMPORTANT)
+    setMembers(Array.isArray(mData) ? mData : []);
+    setUnions(Array.isArray(uData) ? uData : []);
+  };
+
+
+  useEffect(() => {
+    load();
+  }, [token]);
+
+  // 🧠 ROLE LOGIC
+  const canEdit = useMemo(() => {
+    if (!user) return false;
+    return user.role === "admin" || user.role === "éditeur";
+  }, [user]);
+
+  const graph = useMemo(() => {
+    if (!safeMembers.length) return [];
+    return buildFamilyGraph(safeMembers, safeUnions);
+  }, [safeMembers, safeUnions]);
+
+
   const { nodes, links } = useMemo(() => {
-    const dag = graphStratify()(data);
+    if (!graph.length) return { nodes: [], links: [] };
+
+    const dag = graphStratify()(toDag(graph));
 
     const layout = sugiyama()
       .nodeSize(() => [120, 120])
@@ -41,104 +90,64 @@ export default function BasicTree() {
       nodes: Array.from(dag.nodes()),
       links: Array.from(dag.links()),
     };
-  }, []);
+  }, [graph]);
 
-  // 🔍 Zoom / Pan
-  const scale = useSharedValue(1);
-  const translateX = useSharedValue(0);
-  const translateY = useSharedValue(0);
-
-  const savedScale = useSharedValue(1);
-  const savedX = useSharedValue(0);
-  const savedY = useSharedValue(0);
-
-  const onWheel = (e) => {
-    const delta = e.nativeEvent.deltaY;
-
-    const zoomFactor = delta > 0 ? 0.9 : 1.1;
-
-    const nextScale = scale.value * zoomFactor;
-
-    scale.value = Math.max(0.5, Math.min(nextScale, 3));
-    savedScale.value = scale.value;
-
-    
-  };
-
-  const pinch = Gesture.Pinch()
-    .onUpdate((e) => {
-      scale.value = savedScale.value * e.scale;
-    })
-    .onEnd(() => {
-      savedScale.value = scale.value;
-    });
-
-  const pan = Gesture.Pan()
-    .onUpdate((e) => {
-      translateX.value = savedX.value + e.translationX;
-      translateY.value = savedY.value + e.translationY;
-    })
-    .onEnd(() => {
-      savedX.value = translateX.value;
-      savedY.value = translateY.value;
-    });
-
-  const gesture = Gesture.Simultaneous(pinch, pan);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: translateX.value },
-      { translateY: translateY.value },
-      { scale: scale.value },
-    ],
-  }));
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff" }}>
-      <GestureDetector gesture={gesture}>
-        <Animated.View 
-          style={[{ flex: 1 }, animatedStyle]}
-          onWheel={onWheel}
-        >
-          <Svg width={2000} height={2000}>
+    <View style={{ flex: 1 }}>
 
-            {/* 🔗 LINKS */}
-            {links.map((link, i) => (
-              <Line
-                key={i}
-                x1={link.source.x}
-                y1={link.source.y}
-                x2={link.target.x}
-                y2={link.target.y}
-                stroke="#999"
-                strokeWidth={2}
+      {/* 🧭 UI MODE */}
+      <View style={{ padding: 10 }}>
+        <Text>
+          Mode : {isConnected ? "Connecté" : "Invité"}
+        </Text>
+        {user && <Text>Role : {user.role}</Text>}
+      </View>
+
+      {/* 🌳 GRAPH */}
+      <Svg width={2000} height={2000}>
+        {links.map((l, i) => (
+          <Line
+            key={i}
+            x1={l.source.x}
+            y1={l.source.y}
+            x2={l.target.x}
+            y2={l.target.y}
+            stroke="#999"
+          />
+        ))}
+
+        {nodes.map((n, i) => (
+          <G key={i}>
+            <Circle cx={n.x} cy={n.y} r={25} fill="#4A90E2" />
+
+            <SvgText
+              x={n.x}
+              y={n.y + 5}
+              fontSize={12}
+              fill="#fff"
+              textAnchor="middle"
+            >
+              {n.data.prénom}
+            </SvgText>
+
+            {/* ✏️ bouton edit seulement si autorisé */}
+            {canEdit && user?.id === n.data.id_user && (
+              <Circle
+                cx={n.x + 18}
+                cy={n.y - 18}
+                r={6}
+                fill="orange"
               />
-            ))}
+            )}
+          </G>
+        ))}
+      </Svg>
+      
 
-            {/* 🔵 NODES */}
-            {nodes.map((node, i) => (
-              <G key={i}>
-                <Circle
-                  cx={node.x}
-                  cy={node.y}
-                  r={25}
-                  fill="#4A90E2"
-                />
-                <Text
-                  x={node.x}
-                  y={node.y + 5}
-                  fontSize="14"
-                  fill="#fff"
-                  textAnchor="middle"
-                >
-                  {node.data.id}
-                </Text>
-              </G>
-            ))}
-
-          </Svg>
-        </Animated.View>
-      </GestureDetector>
     </View>
   );
+  console.log("members:", members);
+  console.log("unions:", unions);
+
 }
