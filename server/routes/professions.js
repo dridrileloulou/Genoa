@@ -3,6 +3,7 @@ const router = express.Router();
 const pool = require('../db/pool.js');
 const { isEditor, isAdmin } = require('../middleware/roles.js');
 const { getIO } = require('../socketManager.js'); // getIO -> envoie a toutes les sockets
+const logAction = require('../utils/logAction.js'); // enregistre les actions dans la table logs
 
 const handleError = (res, err, route) => {
     console.log(`Erreur ${route}:`, err.message);
@@ -38,6 +39,7 @@ router.post('/professions', isEditor, (req, res) => {
         res.json(`Nouvelle profession ajoutée pour membre id=${id_membre} !`);
         getIO().emit('profession_ajoutée', { id : id_membre });
         console.log(`Nouvelle profession ajoutée pour membre id=${id_membre} !`);
+        logAction(req.user.id, 'professions', null, 'POST'); // log de l'ajout
     })
     .catch(err => handleError(res, err, 'POST /professions'));
 });
@@ -51,6 +53,7 @@ router.patch('/professions/:id', isEditor, (req, res) => {
         res.json(`Profession id=${id} mise à jour !`);
         getIO().emit('profession_modifiée', { id : id_membre });
         console.log(`Profession id=${id} mise à jour !`);
+        logAction(req.user.id, 'professions', id, 'PATCH'); // log de la modification
     })
     .catch(err => handleError(res, err, 'PATCH /professions'));
 });
@@ -63,6 +66,7 @@ router.delete('/professions/:id', isAdmin ,(req, res) => {
         res.json(`Profession id=${id} supprimée !`);
         getIO().emit('profession_supprimée', { id : id });
         console.log(`Profession id=${id} supprimée !`);
+        logAction(req.user.id, 'professions', id, 'DELETE'); // log de la suppression
     })
     .catch(err => handleError(res, err, 'DELETE /professions'));
 });
