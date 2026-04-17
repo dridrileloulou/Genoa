@@ -1,11 +1,4 @@
-import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  Modal,
-  ScrollView
-} from 'react-native';
+import { View, Text, StyleSheet, Pressable, Modal, ScrollView, ActivityIndicator } from 'react-native';
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CreateUser } from './CreateUser';
@@ -47,15 +40,12 @@ export function SeeUser({ visible, onClose }) {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (res.ok) {
-        setUsers(prev => prev.filter(u => u.id !== id));
-      }
+      if (res.ok) setUsers(prev => prev.filter(u => u.id !== id));
     } catch (err) {
       console.error(err);
     }
   };
 
-  // Cycle des rôles : lecteur → éditeur → admin → lecteur
   const nextRole = (current) => {
     if (current === 'lecteur') return 'éditeur';
     if (current === 'éditeur') return 'admin';
@@ -68,15 +58,11 @@ export function SeeUser({ visible, onClose }) {
       const newRole = nextRole(currentRole);
       const res = await fetch(`${API_URL}/users/${id}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ role: newRole }),
       });
       const data = await res.json();
       if (res.ok) {
-        // Le back retourne l'user mis à jour, on remplace dans la liste locale
         setUsers(prev => prev.map(u => (u.id === id ? data : u)));
       } else {
         alert(data.error || data.erreur || 'Erreur lors du changement de rôle');
@@ -92,10 +78,7 @@ export function SeeUser({ visible, onClose }) {
       const token = await AsyncStorage.getItem('userToken');
       const res = await fetch(`${API_URL}/users/${id}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ valide: !current }),
       });
       const data = await res.json();
@@ -112,16 +95,16 @@ export function SeeUser({ visible, onClose }) {
 
   return (
     <Modal visible={visible} transparent animationType="slide">
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
+      <View style={styles.overlay}>
+        <View style={styles.modal}>
 
-          <Text style={styles.modalTitle}>Users</Text>
+          <Text style={styles.modalTitle}>Utilisateurs</Text>
 
           <Pressable
-            style={styles.addUserButton}
+            style={({ pressed }) => [styles.addButton, pressed && styles.btnPressed]}
             onPress={() => setCreateVisible(true)}
           >
-            <Text style={styles.addUserText}>+ Add User</Text>
+            <Text style={styles.addButtonText}>+ Ajouter un utilisateur</Text>
           </Pressable>
 
           <CreateUser
@@ -131,38 +114,53 @@ export function SeeUser({ visible, onClose }) {
           />
 
           {loading ? (
-            <Text style={styles.loading}>Loading...</Text>
+            <ActivityIndicator size="large" color="#60A5FA" style={{ marginVertical: 20 }} />
           ) : (
-            <ScrollView style={{ maxHeight: 260 }}>
-              {users.length > 0 ? (
-                users.map((user) => (
-                  <View key={user.id} style={styles.card}>
-                    <Text style={styles.name}>{user.email}</Text>
-                    <Text style={styles.role}>Role: {user.role}</Text>
-                    <Text style={styles.role}>Validé: {user.validé ? '✅ Oui' : '❌ Non'}</Text>
-                    <View style={styles.actions}>
-                      <Pressable style={styles.deleteBtn} onPress={() => deleteUser(user.id)}>
-                        <Text style={styles.btnText}>Delete</Text>
-                      </Pressable>
-                      <Pressable style={styles.roleBtn} onPress={() => toggleAdmin(user.id, user.role)}>
-                        <Text style={styles.btnText}>→ {nextRole(user.role)}</Text>
-                      </Pressable>
-                      <Pressable style={styles.roleBtn} onPress={() => toggleValidation(user.id, user.validé)}>
-                        <Text style={styles.btnText}>{user.validé ? 'Invalidate' : 'Validate'}</Text>
-                      </Pressable>
+            <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
+              {users.length > 0 ? users.map((user) => (
+                <View key={user.id} style={styles.card}>
+                  <Text style={styles.userEmail}>{user.email}</Text>
+                  <View style={styles.badgeRow}>
+                    <View style={styles.badge}>
+                      <Text style={styles.badgeText}>{user.role}</Text>
+                    </View>
+                    <View style={[styles.badge, user.validé ? styles.badgeValid : styles.badgeInvalid]}>
+                      <Text style={styles.badgeText}>{user.validé ? '✓ Validé' : '✗ Non validé'}</Text>
                     </View>
                   </View>
-                ))
-              ) : (
-                <Text style={styles.loading}>No users found</Text>
+                  <View style={styles.actions}>
+                    <Pressable
+                      style={({ pressed }) => [styles.actionBtn, styles.deleteBtn, pressed && styles.btnPressed]}
+                      onPress={() => deleteUser(user.id)}
+                    >
+                      <Text style={styles.actionBtnText}>Supprimer</Text>
+                    </Pressable>
+                    <Pressable
+                      style={({ pressed }) => [styles.actionBtn, styles.roleBtn, pressed && styles.btnPressed]}
+                      onPress={() => toggleAdmin(user.id, user.role)}
+                    >
+                      <Text style={styles.actionBtnText}>→ {nextRole(user.role)}</Text>
+                    </Pressable>
+                    <Pressable
+                      style={({ pressed }) => [styles.actionBtn, styles.validateBtn, pressed && styles.btnPressed]}
+                      onPress={() => toggleValidation(user.id, user.validé)}
+                    >
+                      <Text style={styles.actionBtnText}>{user.validé ? 'Invalider' : 'Valider'}</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              )) : (
+                <Text style={styles.emptyText}>Aucun utilisateur trouvé</Text>
               )}
             </ScrollView>
           )}
 
-          <Pressable style={styles.closeBtn} onPress={onClose}>
-            <Text style={styles.btnText}>Close</Text>
+          <Pressable
+            style={({ pressed }) => [styles.closeBtn, pressed && styles.btnPressed]}
+            onPress={onClose}
+          >
+            <Text style={styles.closeBtnText}>Fermer</Text>
           </Pressable>
-
         </View>
       </View>
     </Modal>
@@ -170,47 +168,141 @@ export function SeeUser({ visible, onClose }) {
 }
 
 const styles = StyleSheet.create({
-  modalOverlay: {
+  overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  modalContent: {
-    backgroundColor: '#0f1115',
-    width: '90%',
+  modal: {
+    backgroundColor: '#0F172A',
+    width: '92%',
     borderRadius: 16,
     padding: 20,
     borderWidth: 1,
-    borderColor: '#2d7a2d',
+    borderColor: '#334155',
+    maxHeight: '80%',
   },
   modalTitle: {
-    color: '#fff',
-    fontSize: 22,
-    fontWeight: '800',
-    marginBottom: 10,
+    color: '#ffffff',
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 14,
     textAlign: 'center',
   },
-  card: {
-    backgroundColor: '#161b22',
-    padding: 10,
+
+  /* ── Bouton ajout ── */
+  addButton: {
+    backgroundColor: '#60A5FA',
+    padding: 13,
     borderRadius: 10,
-    marginBottom: 10,
-  },
-  name: { color: '#fff', fontWeight: '700' },
-  role: { color: '#aaa', marginBottom: 8 },
-  actions: { flexDirection: 'row', gap: 10 },
-  deleteBtn: { backgroundColor: '#b91c1c', padding: 8, borderRadius: 6 },
-  roleBtn: { backgroundColor: '#2563eb', padding: 8, borderRadius: 6 },
-  addUserButton: {
-    backgroundColor: '#2d7a2d',
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 15,
     alignItems: 'center',
+    marginBottom: 14,
   },
-  addUserText: { color: '#fff', fontWeight: '800', fontSize: 14 },
-  closeBtn: { backgroundColor: '#333', padding: 10, borderRadius: 8, marginTop: 10 },
-  btnText: { color: '#fff', fontWeight: '700', textAlign: 'center' },
-  loading: { color: '#aaa', textAlign: 'center', marginVertical: 10 },
+  addButtonText: {
+    color: '#0F172A',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+
+  /* ── Liste ── */
+  list: {
+    maxHeight: 320,
+  },
+
+  /* ── Carte utilisateur ── */
+  card: {
+    backgroundColor: '#1E293B',
+    padding: 14,
+    borderRadius: 10,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#334155',
+    gap: 8,
+  },
+  userEmail: {
+    color: '#ffffff',
+    fontWeight: '600',
+    fontSize: 15,
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  badge: {
+    backgroundColor: '#334155',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  badgeValid: {
+    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(34, 197, 94, 0.3)',
+  },
+  badgeInvalid: {
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.25)',
+  },
+  badgeText: {
+    color: '#94A3B8',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  actionBtn: {
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  deleteBtn: {
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+  },
+  roleBtn: {
+    backgroundColor: 'rgba(96, 165, 250, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(96, 165, 250, 0.3)',
+  },
+  validateBtn: {
+    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(34, 197, 94, 0.25)',
+  },
+  actionBtnText: {
+    color: '#ffffff',
+    fontWeight: '600',
+    fontSize: 12,
+  },
+
+  /* ── Bouton fermer ── */
+  closeBtn: {
+    backgroundColor: '#1E293B',
+    padding: 13,
+    borderRadius: 10,
+    marginTop: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  closeBtnText: {
+    color: '#94A3B8',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  btnPressed: {
+    opacity: 0.7,
+  },
+  emptyText: {
+    color: '#64748B',
+    textAlign: 'center',
+    marginVertical: 20,
+    fontStyle: 'italic',
+  },
 });

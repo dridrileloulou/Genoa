@@ -1,4 +1,25 @@
-// Changer cette IP par l'IP LAN de votre machine de développement
-// pour tester sur un téléphone physique (ex: 192.168.1.X ou 172.X.X.X)
-// Sur émulateur Android, utiliser 10.0.2.2 à la place de localhost
-export const API_URL = 'http://192.168.1.14:3000';
+import Constants from 'expo-constants';
+
+const getApiUrl = () => {
+  // En production, on utilise la vraie URL
+  if (!__DEV__) {
+    return 'https://api.tondomaine.com';
+  }
+
+  // Expo connaît l'IP de ton PC (ex: "192.168.1.51:8081")
+  // On récupère juste la partie IP, et on met notre port à nous (3000)
+  const debuggerHost =
+    Constants.expoConfig?.hostUri ??   // SDK 46+
+    Constants.manifest?.debuggerHost;  // SDK < 46 (fallback)
+
+  const ip = debuggerHost?.split(':')[0];
+
+  if (!ip) {
+    console.warn('Impossible de détecter l\'IP, fallback sur localhost');
+    return 'http://localhost:3000';
+  }
+
+  return `http://${ip}:3000`;
+};
+
+export const API_URL = getApiUrl();
