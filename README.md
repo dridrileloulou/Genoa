@@ -9,7 +9,7 @@ Projet INP - ENSEIRB-MATMECA – TELECOM 2A | ET8 PG219
 
 | Nom | Rôle |
 |-----|------|
-| **Tabouret** | Back-end (API, base de données, authentification, sockets, logs) |
+| **Dimitri** | Back-end (API, base de données, authentification, sockets, logs) |
 | **Adrien** | Front-end (interface React Native, arbre généalogique, composants UI) |
 
 ---
@@ -74,7 +74,7 @@ npx expo start
 
 ## Fonctionnalités implémentées
 
-### Back-end (Tabouret)
+### Back-end (Dimitri)
 
 | Fonctionnalité | Description |
 |----------------|-------------|
@@ -105,7 +105,7 @@ npx expo start
 | Arbre généalogique | Visualisation interactive de l'arbre avec zoom et navigation (tree.jsx) |
 | Composants thématiques | ThemedText, ThemedView, ParallaxScrollView, HapticTab |
 
-### Commun (Tabouret + Adrien)
+### Commun (Dimitri + Adrien)
 
 | Fonctionnalité | Description |
 |----------------|-------------|
