@@ -75,10 +75,14 @@ export function SeeUser({ visible, onClose }) {
       });
       const data = await res.json();
       if (res.ok) {
+        // Le back retourne l'user mis à jour, on remplace dans la liste locale
         setUsers(prev => prev.map(u => (u.id === id ? data : u)));
+      } else {
+        alert(data.error || data.erreur || 'Erreur lors du changement de rôle');
       }
     } catch (err) {
-      console.error(err);
+      console.error('Erreur toggleAdmin:', err);
+      alert('Erreur réseau');
     }
   };
 
@@ -96,9 +100,12 @@ export function SeeUser({ visible, onClose }) {
       const data = await res.json();
       if (res.ok) {
         setUsers(prev => prev.map(u => (u.id === id ? data : u)));
+      } else {
+        alert(data.error || data.erreur || 'Erreur lors de la validation');
       }
     } catch (err) {
-      console.error(err);
+      console.error('Erreur toggleValidation:', err);
+      alert('Erreur réseau');
     }
   };
 
