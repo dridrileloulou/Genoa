@@ -1,6 +1,5 @@
 import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
+import { Platform, StyleSheet, Pressable, Text } from 'react-native';
 import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -31,20 +30,17 @@ export default function HomeScreen() {
 
       {/* CTA */}
       <ThemedView style={styles.stepContainer}>
-        <Link href="../tree">
-          <ThemedText type="subtitle">Explorer l’arbre</ThemedText>
+        <Link href="../tree" asChild>
+          <Pressable style={styles.button}>
+            <Text style={styles.buttonText}>🌳 Explorer l'arbre</Text>
+          </Pressable>
         </Link>
-
-        <ThemedText>
-          Appuyez pour ouvrir la vue graphique interactive de votre généalogie.
-        </ThemedText>
       </ThemedView>
 
       {/* FEATURES */}
       <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">Fonctionnalités</ThemedText>
-
-        <ThemedText>• Visualisation interactive de l’arbre</ThemedText>
+        <ThemedText>• Visualisation interactive de l'arbre</ThemedText>
         <ThemedText>• Zoom & déplacement fluide</ThemedText>
         <ThemedText>• Navigation entre générations</ThemedText>
         <ThemedText>• Mise à jour dynamique des données</ThemedText>
@@ -69,5 +65,17 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     position: 'absolute',
+  },
+  button: {
+    backgroundColor: '#2d7a2d',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 16,
   },
 });
