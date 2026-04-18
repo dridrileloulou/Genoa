@@ -227,19 +227,38 @@ export default function FamilyTree({ userId, userRole, targetUserId }) {
   const canEdit = userRole === 'admin' || userRole === 'editeur';
   const isAdminRole = userRole === 'admin';
 
+  // L'id_user du propriétaire de l'arbre affiché
+  const treeOwnerId = targetUserId || userId;
+
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const [m, u] = await Promise.all([getMembres(), getUnions()]);
-      setMembres(Array.isArray(m) ? m : []);
-      setUnions(Array.isArray(u) ? u : []);
-      setNodeOffsets({}); // reset positions au rechargement
+      
+      // Filtrer les membres par treeOwnerId
+      const allMembres = Array.isArray(m) ? m : [];
+      const filteredMembres = treeOwnerId 
+        ? allMembres.filter((membre) => membre.id_user === treeOwnerId)
+        : allMembres;
+      
+      // Créer un Set des IDs de membres de cet arbre
+      const membreIdsSet = new Set(filteredMembres.map(membre => membre.id));
+      
+      // Filtrer les unions : une union appartient à l'arbre si au moins un de ses membres y appartient
+      const allUnions = Array.isArray(u) ? u : [];
+      const filteredUnions = allUnions.filter((union) => 
+        membreIdsSet.has(union.id_membre_1) || membreIdsSet.has(union.id_membre_2)
+      );
+      
+      setMembres(filteredMembres);
+      setUnions(filteredUnions);
+      setNodeOffsets({});
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [treeOwnerId]);
 
   useEffect(() => {
     loadData();
@@ -252,13 +271,6 @@ export default function FamilyTree({ userId, userRole, targetUserId }) {
     const off = nodeOffsets[nodeId] || { dx: 0, dy: 0 };
     return { x: baseX + off.dx, y: baseY + off.dy };
   };
-
-  // Links dynamiques recalculés avec les offsets
-  const dynamicLinks = links.map((link) => {
-    // Retrouver quel nœud correspond à chaque extrémité
-    // On recalcule les positions à partir des nodes + offsets
-    return link; // les links SVG sont recalculés dans le render
-  });
 
   const maxX = nodes.reduce((acc, n) => Math.max(acc, n.x + NODE_W + 200), SCREEN_W);
   const maxY = nodes.reduce((acc, n) => Math.max(acc, n.y + NODE_H + 200), SCREEN_H);
@@ -415,6 +427,7 @@ export default function FamilyTree({ userId, userRole, targetUserId }) {
         onSuccess={loadData}
         canEdit={canEdit}
         isAdmin={isAdminRole}
+        currentUserId={treeOwnerId}
       />
     </View>
   );
@@ -428,4 +441,4 @@ const styles = StyleSheet.create({
   },
   loadingText: { color: 'rgba(180,220,190,0.5)', fontSize: 14 },
   emptyText: { color: 'rgba(180,220,190,0.5)', fontSize: 16 },
-});
+}); 

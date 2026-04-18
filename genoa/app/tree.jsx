@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from 'jwt-decode';
 import FamilyTree from '@/components/tree/FamilyTree';
@@ -18,12 +18,16 @@ import AddMemberModal from '@/components/tree/AddMemberModal';
 import { getMembres, postMembre } from '@/components/api/api';
 
 export default function TreeScreen() {
-  const [authState, setAuthState] = useState(null); // null = loading
+  const params = useLocalSearchParams();
+  const targetUserId = params.userId ? parseInt(params.userId) : null;
+  const mode = params.mode || 'mine';
+
+  const [authState, setAuthState] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showFirstMemberModal, setShowFirstMemberModal] = useState(false);
   const [firstMemberPrenom, setFirstMemberPrenom] = useState('');
   const [creatingFirst, setCreatingFirst] = useState(false);
-  const [treeKey, setTreeKey] = useState(0); // pour forcer le re-render du tree
+  const [treeKey, setTreeKey] = useState(0);
 
   const checkAuth = async () => {
     try {
@@ -36,13 +40,15 @@ export default function TreeScreen() {
           role: decoded.role,
           token,
         });
-        // Vérifier si l'user a déjà un membre
-        checkFirstMember(decoded.id);
+        if (!targetUserId || targetUserId === decoded.id) {
+          checkFirstMember(decoded.id);
+        }
       } else {
         await AsyncStorage.removeItem('userToken');
         setAuthState(null);
       }
     } catch (e) {
+      console.error('Erreur checkAuth:', e);
       setAuthState(null);
     }
   };
@@ -55,20 +61,27 @@ export default function TreeScreen() {
         setShowFirstMemberModal(true);
       }
     } catch (e) {
-      console.error(e);
+      console.error('Erreur checkFirstMember:', e);
     }
   };
 
   const handleCreateFirstMember = async () => {
-    if (!firstMemberPrenom.trim()) {
+    const prenom = firstMemberPrenom.trim();
+    
+    if (!prenom) {
       Alert.alert('Erreur', 'Veuillez entrer votre prénom.');
       return;
     }
+
     setCreatingFirst(true);
+    
     try {
-      await postMembre({
-        prénom: firstMemberPrenom.trim(),
-        nom: null,
+      console.log('🌱 Création du premier membre avec:', { prenom, userId: authState.userId });
+
+      // Créer le membre (racine de l'arbre)
+      const newMembre = await postMembre({
+        prénom: prenom,
+        nom: prenom,
         sexe: null,
         date_naissance: null,
         date_décès: null,
@@ -76,13 +89,30 @@ export default function TreeScreen() {
         informations_complémentaires: null,
         photo: null,
         privé: false,
-        id_union: null,
+        id_union: null, // Racine de l'arbre = pas de parents
         biologique: null,
       });
+
+      console.log('✅ Membre créé:', newMembre);
+
+      // Fermer le modal et rafraîchir
       setShowFirstMemberModal(false);
+      setFirstMemberPrenom('');
       setTreeKey((k) => k + 1);
-    } catch (e) {
-      Alert.alert('Erreur', "Impossible de créer votre membre.");
+      
+      Alert.alert(
+        'Succès ! 🎉',
+        `Bienvenue ${prenom} ! Votre arbre généalogique a été créé.`,
+        [{ text: 'OK' }]
+      );
+
+    } catch (error) {
+      console.error('❌ Erreur création premier membre:', error);
+      Alert.alert(
+        'Erreur',
+        `Impossible de créer votre profil.\n\nDétails: ${error.message}`,
+        [{ text: 'OK' }]
+      );
     } finally {
       setCreatingFirst(false);
     }
@@ -94,7 +124,6 @@ export default function TreeScreen() {
     }, [])
   );
 
-  // Non connecté
   if (!authState) {
     return (
       <View style={styles.gateContainer}>
@@ -107,17 +136,27 @@ export default function TreeScreen() {
     );
   }
 
+  const displayUserId = targetUserId || authState.userId;
+  const isMyTree = displayUserId === authState.userId;
+  const canEdit = isMyTree || authState.role === 'admin' || authState.role === 'editeur';
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <View style={styles.container}>
-        {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Arbre généalogique</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.headerTitle}>
+              {isMyTree ? 'Mon arbre' : `Arbre utilisateur #${displayUserId}`}
+            </Text>
+            <Text style={styles.headerSubtitle}>
+              {canEdit ? 'Modification autorisée' : 'Lecture seule'}
+            </Text>
+          </View>
           <View style={styles.headerRight}>
             <View style={styles.roleBadge}>
               <Text style={styles.roleBadgeText}>{authState.role}</Text>
             </View>
-            {(authState.role === 'admin' || authState.role === 'editeur') && (
+            {canEdit && (
               <Pressable style={styles.addBtn} onPress={() => setShowAddModal(true)}>
                 <Text style={styles.addBtnText}>+ Ajouter</Text>
               </Pressable>
@@ -125,11 +164,11 @@ export default function TreeScreen() {
           </View>
         </View>
 
-        {/* Arbre */}
         <FamilyTree
           key={treeKey}
           userId={authState.userId}
           userRole={authState.role}
+          targetUserId={displayUserId}
         />
 
         {/* Modal premier membre */}
@@ -144,7 +183,8 @@ export default function TreeScreen() {
               <Text style={styles.firstMemberEmoji}>👋</Text>
               <Text style={styles.firstMemberTitle}>Bienvenue sur Genoa</Text>
               <Text style={styles.firstMemberText}>
-                Pour commencer, entrez votre prénom. Vous pourrez compléter votre profil ensuite.
+                Pour commencer votre arbre généalogique, entrez votre prénom. 
+                Cela créera le sommet de votre arbre familial.
               </Text>
               <TextInput
                 style={styles.firstMemberInput}
@@ -153,6 +193,7 @@ export default function TreeScreen() {
                 placeholder="Votre prénom"
                 placeholderTextColor="#5a7a65"
                 autoFocus
+                editable={!creatingFirst}
               />
               <Pressable
                 style={[styles.firstMemberBtn, creatingFirst && styles.btnDisabled]}
@@ -162,7 +203,7 @@ export default function TreeScreen() {
                 {creatingFirst ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={styles.firstMemberBtnText}>Commencer</Text>
+                  <Text style={styles.firstMemberBtnText}>Créer mon arbre 🌳</Text>
                 )}
               </Pressable>
             </View>
@@ -177,7 +218,7 @@ export default function TreeScreen() {
             setShowAddModal(false);
             setTreeKey((k) => k + 1);
           }}
-          currentUserId={authState.userId}
+          currentUserId={displayUserId}
         />
       </View>
     </GestureHandlerRootView>
@@ -189,8 +230,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0a1f12',
   },
-
-  /* ── Gate (non connecté) ── */
   gateContainer: {
     flex: 1,
     backgroundColor: '#0a1f12',
@@ -215,8 +254,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
   },
-
-  /* ── Header ── */
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -232,6 +269,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: '#e0f0e8',
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: 'rgba(140,200,160,0.5)',
+    marginTop: 2,
   },
   headerRight: {
     flexDirection: 'row',
@@ -265,11 +307,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 13,
   },
-
-  /* ── Premier membre ── */
   firstMemberOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.75)',
+    backgroundColor: 'rgba(0,0,0,0.85)',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
@@ -279,6 +319,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 28,
     width: '100%',
+    maxWidth: 400,
     alignItems: 'center',
     gap: 12,
     borderWidth: 1,
@@ -296,10 +337,10 @@ const styles = StyleSheet.create({
   },
   firstMemberText: {
     fontSize: 14,
-    color: 'rgba(180,220,190,0.6)',
+    color: 'rgba(180,220,190,0.7)',
     textAlign: 'center',
     lineHeight: 20,
-    marginBottom: 4,
+    marginBottom: 8,
   },
   firstMemberInput: {
     width: '100%',

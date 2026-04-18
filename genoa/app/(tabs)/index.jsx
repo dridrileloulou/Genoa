@@ -82,7 +82,7 @@ export default function HomeScreen() {
 
         <View style={styles.separator} />
 
-        <Link href="/tree?mode=all" asChild>
+        <Link href="/explore" asChild>
           <Pressable style={({ pressed }) => [pressed && styles.rowPressed]}>
             <View style={styles.row}>
               <ThemedText style={styles.rowEmoji}>🌍</ThemedText>
