@@ -48,8 +48,16 @@ Genoa/
 ### Base de données
 
 ```bash
+cd database
 sudo service postgresql start
-sudo -u postgres psql -d genoa -f database/genoa.sql
+sudo -u postgres psql -d genoa
+```
+Pour ajouter directement un admin (username: admin; pwd : mdp)
+```sql
+INSERT INTO "users" ("email", "password", "role", "validé")
+VALUES ('admin@example.com', 'mdp', 'admin', true);
+```
+```bash
 # Optionnel : insérer les données d'exemple (descendance Henri IV)
 sudo -u postgres psql -d genoa -f database/seed_henri_iv.sql
 ```
@@ -58,6 +66,7 @@ sudo -u postgres psql -d genoa -f database/seed_henri_iv.sql
 
 ```bash
 cd server
+npm install dotenv
 node server.js
 ```
 
@@ -67,6 +76,7 @@ Le serveur tourne sur `http://localhost:3000`.
 
 ```bash
 cd genoa
+npm install expo
 npx expo start
 ```
 
