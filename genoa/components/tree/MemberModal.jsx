@@ -5,12 +5,10 @@ import {
 import { useState, useEffect } from 'react';
 import {
   patchMembre, deleteMembre,
-  getCoordonnees, patchCoordonnees, postCoordonnees,
-  getProfessions, patchProfession, postProfession,
   getMembres, getUnions, postUnion, patchUnion,
 } from '@/components/api/api';
 
-export default function MemberModal({ visible, membre, onClose, onSuccess, canEdit, isAdmin }) {
+export default function MemberModal({ visible, membre, onClose, onSuccess, canEdit, isAdmin, currentUserId }) {
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState('infos');
 
@@ -20,16 +18,6 @@ export default function MemberModal({ visible, membre, onClose, onSuccess, canEd
   const [dateNaissance, setDateNaissance] = useState('');
   const [dateDécès, setDateDécès] = useState('');
   const [infos, setInfos] = useState('');
-
-  const [coordId, setCoordId] = useState(null);
-  const [adresse, setAdresse] = useState('');
-  const [téléphone, setTéléphone] = useState('');
-  const [email, setEmail] = useState('');
-
-  const [profId, setProfId] = useState(null);
-  const [métier, setMétier] = useState('');
-  const [dateDebut, setDateDebut] = useState('');
-  const [dateFin, setDateFin] = useState('');
 
   const [allMembres, setAllMembres] = useState([]);
   const [allUnions, setAllUnions] = useState([]);
@@ -41,6 +29,9 @@ export default function MemberModal({ visible, membre, onClose, onSuccess, canEd
   const [showDropParent, setShowDropParent] = useState(false);
   const [showDropEnfant, setShowDropEnfant] = useState(false);
   const [familleLoading, setFamilleLoading] = useState(false);
+
+  // Déterminer l'id_user du propriétaire de l'arbre
+  const treeOwnerId = currentUserId || membre?.id_user;
 
   useEffect(() => {
     if (membre && visible) {
@@ -57,45 +48,39 @@ export default function MemberModal({ visible, membre, onClose, onSuccess, canEd
 
   const loadExtra = async (membreId) => {
     try {
-      const [coords, profs, ms, us] = await Promise.all([
-        getCoordonnees(membreId),
-        getProfessions(membreId),
+      const [ms, us] = await Promise.all([
         getMembres(),
         getUnions(),
       ]);
 
-      if (Array.isArray(coords) && coords.length > 0) {
-        setCoordId(coords[0].id);
-        setAdresse(coords[0].adresse || '');
-        setTéléphone(coords[0]['téléphone'] || '');
-        setEmail(coords[0].email || '');
-      } else {
-        setCoordId(null); setAdresse(''); setTéléphone(''); setEmail('');
-      }
+      const allMembresData = Array.isArray(ms) ? ms : [];
+      const allUnionsData = Array.isArray(us) ? us : [];
+      
+      // Filtrer les membres par treeOwnerId pour n'afficher que ceux de l'arbre actuel
+      const filteredMembres = treeOwnerId 
+        ? allMembresData.filter((m) => m.id_user === treeOwnerId)
+        : allMembresData;
+      
+      // Créer un Set des IDs de membres de cet arbre
+      const membreIdsSet = new Set(filteredMembres.map(m => m.id));
+      
+      // Filtrer les unions : une union appartient à l'arbre si au moins un de ses membres y appartient
+      const filteredUnions = allUnionsData.filter((union) => 
+        membreIdsSet.has(union.id_membre_1) || membreIdsSet.has(union.id_membre_2)
+      );
 
-      if (Array.isArray(profs) && profs.length > 0) {
-        setProfId(profs[0].id);
-        setMétier(profs[0]['métier'] || '');
-        setDateDebut(profs[0]['date_début'] || '');
-        setDateFin(profs[0].date_fin || '');
-      } else {
-        setProfId(null); setMétier(''); setDateDebut(''); setDateFin('');
-      }
+      setAllMembres(filteredMembres);
+      setAllUnions(filteredUnions);
 
-      const membres = Array.isArray(ms) ? ms : [];
-      const unions = Array.isArray(us) ? us : [];
-      setAllMembres(membres);
-      setAllUnions(unions);
-
-      const membreCourant = membres.find(m => m.id === membreId);
+      const membreCourant = filteredMembres.find(m => m.id === membreId);
 
       if (membreCourant?.id_union) {
-        const unionP = unions.find(u => u.id === membreCourant.id_union);
+        const unionP = filteredUnions.find(u => u.id === membreCourant.id_union);
         if (unionP) {
           setUnionParentale(unionP);
           const ps = [];
-          if (unionP.id_membre_1) { const p = membres.find(m => m.id === unionP.id_membre_1); if (p) ps.push(p); }
-          if (unionP.id_membre_2) { const p = membres.find(m => m.id === unionP.id_membre_2); if (p) ps.push(p); }
+          if (unionP.id_membre_1) { const p = filteredMembres.find(m => m.id === unionP.id_membre_1); if (p) ps.push(p); }
+          if (unionP.id_membre_2) { const p = filteredMembres.find(m => m.id === unionP.id_membre_2); if (p) ps.push(p); }
           setParents(ps);
         } else {
           setUnionParentale(null); setParents([]);
@@ -104,8 +89,8 @@ export default function MemberModal({ visible, membre, onClose, onSuccess, canEd
         setUnionParentale(null); setParents([]);
       }
 
-      const mesUnions = unions.filter(u => u.id_membre_1 === membreId || u.id_membre_2 === membreId);
-      const mesEnfants = membres.filter(m => mesUnions.some(u => u.id === m.id_union));
+      const mesUnions = filteredUnions.filter(u => u.id_membre_1 === membreId || u.id_membre_2 === membreId);
+      const mesEnfants = filteredMembres.filter(m => mesUnions.some(u => u.id === m.id_union));
       setEnfants(mesEnfants);
 
     } catch (e) {
@@ -130,10 +115,22 @@ export default function MemberModal({ visible, membre, onClose, onSuccess, canEd
         else { Alert.alert('Info', 'Ce membre a déjà deux parents.'); return; }
         await patchUnion(unionParentale.id, updatedUnion);
       } else {
-        await postUnion({ id_membre_1: parentChoisi.id, id_membre_2: null });
-        const updatedUnions = await getUnions();
-        const newUnion = [...updatedUnions].sort((a, b) => b.id - a.id)[0];
-        await patchMembre(membre.id, { ...membreCourant, id_union: newUnion.id });
+        const newUnionResult = await postUnion({ id_membre_1: parentChoisi.id, id_membre_2: null });
+        
+        let newUnionId;
+        if (newUnionResult && newUnionResult.id) {
+          newUnionId = newUnionResult.id;
+        } else {
+          const updatedUnions = await getUnions();
+          const newUnion = [...updatedUnions].sort((a, b) => b.id - a.id)[0];
+          newUnionId = newUnion.id;
+        }
+        
+        await patchMembre(membre.id, { 
+          ...membreCourant, 
+          id_union: newUnionId,
+          id_user: membreCourant.id_user
+        });
       }
       await loadExtra(membre.id);
       onSuccess();
@@ -155,13 +152,22 @@ export default function MemberModal({ visible, membre, onClose, onSuccess, canEd
       if (unionExistante) {
         unionId = unionExistante.id;
       } else {
-        await postUnion({ id_membre_1: membre.id, id_membre_2: null });
-        const updatedUnions = await getUnions();
-        const newUnion = [...updatedUnions].sort((a, b) => b.id - a.id)[0];
-        unionId = newUnion.id;
+        const newUnionResult = await postUnion({ id_membre_1: membre.id, id_membre_2: null });
+        
+        if (newUnionResult && newUnionResult.id) {
+          unionId = newUnionResult.id;
+        } else {
+          const updatedUnions = await getUnions();
+          const newUnion = [...updatedUnions].sort((a, b) => b.id - a.id)[0];
+          unionId = newUnion.id;
+        }
       }
       const enfantData = allMembres.find(m => m.id === enfantChoisi.id);
-      await patchMembre(enfantChoisi.id, { ...enfantData, id_union: unionId });
+      await patchMembre(enfantChoisi.id, { 
+        ...enfantData, 
+        id_union: unionId,
+        id_user: enfantData.id_user
+      });
       await loadExtra(membre.id);
       onSuccess();
     } catch (e) {
@@ -189,17 +195,8 @@ export default function MemberModal({ visible, membre, onClose, onSuccess, canEd
         'privé': membreCourant['privé'] ?? false,
         id_union: membreCourant.id_union ?? null,
         biologique: membreCourant.biologique ?? null,
+        id_user: membreCourant.id_user ?? treeOwnerId,
       });
-      if (adresse || téléphone || email) {
-        const coordData = { id_membre: membre.id, adresse, téléphone, email };
-        if (coordId) await patchCoordonnees(coordId, coordData);
-        else await postCoordonnees(coordData);
-      }
-      if (métier) {
-        const profData = { id_membre: membre.id, métier, 'date_début': dateDebut || null, date_fin: dateFin || null };
-        if (profId) await patchProfession(profId, profData);
-        else await postProfession(profData);
-      }
       onSuccess();
       onClose();
     } catch (e) {
@@ -249,8 +246,6 @@ export default function MemberModal({ visible, membre, onClose, onSuccess, canEd
 
   const TABS = [
     { key: 'infos', label: 'Identité' },
-    { key: 'contact', label: 'Contact' },
-    { key: 'profession', label: 'Profession' },
     { key: 'famille', label: 'Famille' },
   ];
 
@@ -299,22 +294,6 @@ export default function MemberModal({ visible, membre, onClose, onSuccess, canEd
               </View>
             )}
 
-            {tab === 'contact' && (
-              <View style={styles.form}>
-                <Field label="Adresse" value={adresse} onChange={setAdresse} editable={canEdit} />
-                <Field label="Téléphone" value={téléphone} onChange={setTéléphone} editable={canEdit} />
-                <Field label="Email" value={email} onChange={setEmail} editable={canEdit} />
-              </View>
-            )}
-
-            {tab === 'profession' && (
-              <View style={styles.form}>
-                <Field label="Métier" value={métier} onChange={setMétier} editable={canEdit} />
-                <Field label="Depuis" value={dateDebut} onChange={setDateDebut} editable={canEdit} placeholder="YYYY-MM-DD" />
-                <Field label="Jusqu'à" value={dateFin} onChange={setDateFin} editable={canEdit} placeholder="YYYY-MM-DD" />
-              </View>
-            )}
-
             {tab === 'famille' && (
               <View style={styles.form}>
                 <Text style={styles.familleSection}>Parents ({parents.length}/2)</Text>
@@ -343,7 +322,6 @@ export default function MemberModal({ visible, membre, onClose, onSuccess, canEd
                       placeholder="Rechercher un membre..."
                       placeholderTextColor="#5a7a65"
                     />
-                    {/* ✅ Dropdown scrollable avec hauteur max */}
                     {showDropParent && availableParents.length > 0 && (
                       <View style={styles.dropdown}>
                         <ScrollView
@@ -389,7 +367,6 @@ export default function MemberModal({ visible, membre, onClose, onSuccess, canEd
                       placeholder="Rechercher un membre..."
                       placeholderTextColor="#5a7a65"
                     />
-                    {/* ✅ Dropdown scrollable avec hauteur max */}
                     {showDropEnfant && availableEnfants.length > 0 && (
                       <View style={styles.dropdown}>
                         <ScrollView
@@ -512,7 +489,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#0a1f12', borderWidth: 1,
     borderColor: 'rgba(80,160,100,0.2)', borderRadius: 10, marginTop: 4, overflow: 'hidden',
   },
-  // ✅ Hauteur max pour le scroll du dropdown
   dropdownScroll: {
     maxHeight: 200,
   },

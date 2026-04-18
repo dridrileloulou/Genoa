@@ -15,30 +15,20 @@ export function Login({ onLoginSuccess }) {
       alert('Veuillez remplir tous les champs');
       return;
     }
-
     setLoading(true);
-
     try {
       const response = await fetch(`${API_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
-
       const data = await response.json();
-
       if (response.ok && data.token) {
-        // Stocker le token
         await AsyncStorage.setItem('userToken', data.token);
-        
         alert('Connexion réussie !');
         setEmail('');
         setPassword('');
-        
-        // Appeler le callback pour mettre à jour l'état de connexion
-        if (onLoginSuccess) {
-          onLoginSuccess();
-        }
+        if (onLoginSuccess) onLoginSuccess();
       } else {
         alert(data.error || "Identifiants incorrects ou compte non validé");
       }
@@ -52,24 +42,22 @@ export function Login({ onLoginSuccess }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Login</Text>
-
       <Text style={styles.label}>Email</Text>
       <TextInput
         style={styles.input}
-        placeholder="Enter your email"
-        placeholderTextColor="#4a6b4a"
+        placeholder="Entrez votre email"
+        placeholderTextColor="#64748B"
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
         autoCapitalize="none"
       />
 
-      <Text style={styles.label}>Password</Text>
+      <Text style={styles.label}>Mot de passe</Text>
       <TextInput
         style={styles.input}
-        placeholder="Enter your password"
-        placeholderTextColor="#4a6b4a"
+        placeholder="Entrez votre mot de passe"
+        placeholderTextColor="#64748B"
         secureTextEntry
         value={password}
         onChangeText={setPassword}
@@ -78,26 +66,24 @@ export function Login({ onLoginSuccess }) {
       <Pressable
         style={({ pressed }) => [
           styles.loginButton,
-          { opacity: pressed || loading ? 0.6 : 1 }
+          (pressed || loading) && styles.loginButtonPressed,
         ]}
         onPress={handleLogin}
         disabled={loading}
       >
         <Text style={styles.loginButtonText}>
-          {loading ? '⏳ Connexion...' : '🚀 Login'}
+          {loading ? 'Connexion...' : 'Se connecter'}
         </Text>
       </Pressable>
 
-      <Text style={styles.signupText}>
-        Don't have an account?{' '}
-        <Pressable onPress={() => setModalVisible(true)}>
-          <Text style={styles.link}>Sign up</Text>
-        </Pressable>
-      </Text>
+      <Pressable onPress={() => setModalVisible(true)} style={styles.signupRow}>
+        <Text style={styles.signupText}>Pas encore de compte ? </Text>
+        <Text style={styles.signupLink}>S'inscrire</Text>
+      </Pressable>
 
-      <SignUpModal 
-        visible={modalVisible} 
-        onClose={() => setModalVisible(false)} 
+      <SignUpModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
       />
     </View>
   );
@@ -105,68 +91,56 @@ export function Login({ onLoginSuccess }) {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#0a0a0a',
-    padding: 28,
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: '#f6f8f6',
-    marginBottom: 24,
-    letterSpacing: 1,
+    marginTop: 8,
   },
   label: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#f6f8f6',
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748B',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
     marginTop: 16,
     marginBottom: 6,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
   },
   input: {
-    backgroundColor: '#141414',
+    backgroundColor: '#1E293B',
     borderWidth: 1,
-    borderColor: '#2d7a2d',
-    borderRadius: 8,
-    paddingVertical: 12,
+    borderColor: '#334155',
+    borderRadius: 12,
+    paddingVertical: 14,
     paddingHorizontal: 14,
-    fontSize: 15,
-    color: '#e8f5e8',
-  },
-  signupText: {
-    color: '#888',
-    fontSize: 14,
-    textAlign: 'center',
-    marginTop: 20,
-    marginBottom: 8,
-  },
-  link: {
-    color: '#2d7a2d',
-    fontWeight: '700',
+    fontSize: 16,
+    color: '#ffffff',
   },
   loginButton: {
-    backgroundColor: '#2d7a2d',
+    backgroundColor: '#60A5FA',
     paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: 'center',
-    justifyContent: 'center',
-    marginVertical: 20,
-    borderWidth: 1,
-    borderColor: '#1f5a1f',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 4,
+    marginTop: 24,
+  },
+  loginButtonPressed: {
+    opacity: 0.7,
   },
   loginButtonText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#ffffff',
-    letterSpacing: 0.5,
+    color: '#0F172A',
+    letterSpacing: 0.3,
+  },
+  signupRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  signupText: {
+    fontSize: 14,
+    color: '#64748B',
+  },
+  signupLink: {
+    fontSize: 14,
+    color: '#60A5FA',
+    fontWeight: '600',
   },
 });

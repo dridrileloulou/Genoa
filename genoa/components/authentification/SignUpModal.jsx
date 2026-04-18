@@ -12,23 +12,19 @@ export function SignUpModal({ visible, onClose }) {
       alert('Veuillez remplir tous les champs');
       return;
     }
-
     setLoading(true);
-
     try {
       const response = await fetch(`${API_URL}/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
-
       const data = await response.json();
-
       if (response.ok) {
         alert('Compte créé avec succès !');
         setEmail('');
         setPassword('');
-        onClose(); // Ferme le modal
+        onClose();
       } else {
         alert(data.error || 'Erreur lors de la création du compte');
       }
@@ -47,46 +43,46 @@ export function SignUpModal({ visible, onClose }) {
       visible={visible}
       onRequestClose={onClose}
     >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Sign Up</Text>
-          
+      <View style={styles.overlay}>
+        <View style={styles.modal}>
+          <Text style={styles.modalTitle}>Créer un compte</Text>
+
           <Text style={styles.label}>Email</Text>
           <TextInput
             style={styles.input}
-            placeholder="Enter your email"
-            placeholderTextColor="#4a6b4a"
+            placeholder="Entrez votre email"
+            placeholderTextColor="#64748B"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
           />
-          
-          <Text style={styles.label}>Password</Text>
+
+          <Text style={styles.label}>Mot de passe</Text>
           <TextInput
             style={styles.input}
-            placeholder="Enter your password"
-            placeholderTextColor="#4a6b4a"
+            placeholder="Entrez votre mot de passe"
+            placeholderTextColor="#64748B"
             secureTextEntry
             value={password}
             onChangeText={setPassword}
           />
-          
+
           <Pressable
-            style={[styles.signupButton, { opacity: loading ? 0.6 : 1 }]}
+            style={({ pressed }) => [styles.signupButton, (pressed || loading) && styles.buttonPressed]}
             onPress={handleSignUp}
             disabled={loading}
           >
             <Text style={styles.signupButtonText}>
-              {loading ? '⏳ Creating...' : '✨ Create Account'}
+              {loading ? 'Création...' : 'Créer le compte'}
             </Text>
           </Pressable>
-          
+
           <Pressable
-            style={styles.closeButton}
+            style={({ pressed }) => [styles.closeButton, pressed && styles.buttonPressed]}
             onPress={onClose}
           >
-            <Text style={styles.closeButtonText}>❌ Close</Text>
+            <Text style={styles.closeButtonText}>Annuler</Text>
           </Pressable>
         </View>
       </View>
@@ -95,68 +91,73 @@ export function SignUpModal({ visible, onClose }) {
 }
 
 const styles = StyleSheet.create({
-  modalOverlay: {
+  overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  modalContent: {
-    backgroundColor: '#0a0a0a',
+  modal: {
+    backgroundColor: '#0F172A',
     borderRadius: 16,
-    padding: 28,
-    width: '85%',
+    padding: 24,
+    width: '88%',
     borderWidth: 1,
-    borderColor: '#2d7a2d',
+    borderColor: '#334155',
   },
   modalTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#f6f8f6',
-    marginBottom: 20,
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#ffffff',
+    marginBottom: 8,
     textAlign: 'center',
   },
   label: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#f6f8f6',
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748B',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
     marginTop: 16,
     marginBottom: 6,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
   },
   input: {
-    backgroundColor: '#141414',
+    backgroundColor: '#1E293B',
     borderWidth: 1,
-    borderColor: '#2d7a2d',
-    borderRadius: 8,
-    paddingVertical: 12,
+    borderColor: '#334155',
+    borderRadius: 12,
+    paddingVertical: 14,
     paddingHorizontal: 14,
-    fontSize: 15,
-    color: '#e8f5e8',
+    fontSize: 16,
+    color: '#ffffff',
   },
   signupButton: {
-    backgroundColor: '#2d7a2d',
+    backgroundColor: '#60A5FA',
     paddingVertical: 14,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 24,
   },
   signupButtonText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#ffffff',
+    color: '#0F172A',
   },
   closeButton: {
-    backgroundColor: '#333',
-    paddingVertical: 12,
-    borderRadius: 8,
+    backgroundColor: '#1E293B',
+    paddingVertical: 13,
+    borderRadius: 12,
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: '#334155',
   },
   closeButtonText: {
-    color: '#ccc',
-    fontSize: 14,
+    color: '#94A3B8',
+    fontSize: 15,
     fontWeight: '600',
+  },
+  buttonPressed: {
+    opacity: 0.7,
   },
 });

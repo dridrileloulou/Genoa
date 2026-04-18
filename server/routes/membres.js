@@ -39,7 +39,7 @@ router.get('/membres/:id', (req, res) => {
     .catch(err => handleError(res, err, 'GET /membres/:id'));
 });
 
-// -- POST --
+// -- POST (✅ MODIFIÉ) --
 router.post('/membres', isEditor, (req, res) => {
   console.log('=== BODY REÇU POST /membres ===', req.body);
 
@@ -49,19 +49,22 @@ router.post('/membres', isEditor, (req, res) => {
   const privé = req.body['privé'] ?? req.body['prive'] ?? false;
 
   pool.query(
-    `INSERT INTO membres (sexe, "prénom", nom, date_naissance, "date_décès", id_user, "informations_complémentaires", photo, "privé", id_union, biologique) VALUES (\$1, \$2, \$3, \$4, \$5, \$6, \$7, \$8, \$9, \$10, \$11)`,
+    `INSERT INTO membres (sexe, "prénom", nom, date_naissance, "date_décès", id_user, "informations_complémentaires", photo, "privé", id_union, biologique) 
+     VALUES (\$1, \$2, \$3, \$4, \$5, \$6, \$7, \$8, \$9, \$10, \$11) 
+     RETURNING *`,
     [clean(sexe), prénom, clean(nom), clean(date_naissance), clean(date_décès), clean(id_user), clean(informations_complémentaires), clean(photo), privé, clean(id_union), clean(biologique)]
   )
     .then(result => {
-        res.json(`Nouveau membre ${nom} ${prénom} ajouté !`);
-        console.log(`Nouveau membre ${nom} ${prénom} ajouté !`);
-        getIO().emit('membre_ajouté', { nom: nom, prenom: prénom });
-        logAction(req.user.id, 'membres', null, 'POST'); // log de l'ajout
+        const newMembre = result.rows[0];
+        res.status(201).json(newMembre);
+        console.log(`✅ Nouveau membre créé:`, newMembre);
+        getIO().emit('membre_ajouté', newMembre);
+        logAction(req.user.id, 'membres', newMembre.id, 'POST');
     })
     .catch(err => handleError(res, err, 'POST /membres'));
 });
 
-// -- PATCH --
+// -- PATCH (✅ MODIFIÉ) --
 router.patch('/membres/:id', isEditor, (req, res) => {
   console.log('=== BODY REÇU PATCH /membres ===', req.body);
 
@@ -72,27 +75,29 @@ router.patch('/membres/:id', isEditor, (req, res) => {
   const id = req.params.id;
 
   pool.query(
-    `UPDATE membres SET sexe=\$1, "prénom"=\$2, nom=\$3, date_naissance=\$4, "date_décès"=\$5, "informations_complémentaires"=\$6, photo=\$7, "privé"=\$8, id_union=\$9, biologique=\$10 WHERE id=\$11`,
+    `UPDATE membres SET sexe=\$1, "prénom"=\$2, nom=\$3, date_naissance=\$4, "date_décès"=\$5, "informations_complémentaires"=\$6, photo=\$7, "privé"=\$8, id_union=\$9, biologique=\$10 WHERE id=\$11 RETURNING *`,
     [clean(sexe), prénom, clean(nom), clean(date_naissance), clean(date_décès), clean(informations_complémentaires), clean(photo), privé, clean(id_union), clean(biologique), id]
   )
     .then(result => {
-        res.json(`Mise à jour du membre ${nom} ${prénom} réussie !`);
-        getIO().emit('membre_modifie', { id: id }); // on prévient tout le monde sur le serveur
-        console.log(`Mise à jour du membre ${nom} ${prénom} réussie !`);
-        logAction(req.user.id, 'membres', id, 'PATCH'); // log de la modification
+        const updatedMembre = result.rows[0];
+        res.json(updatedMembre);
+        getIO().emit('membre_modifie', updatedMembre);
+        console.log(`✅ Membre mis à jour:`, updatedMembre);
+        logAction(req.user.id, 'membres', id, 'PATCH');
     })
     .catch(err => handleError(res, err, 'PATCH /membres'));
 });
 
-// -- DELETE --
+// -- DELETE (✅ MODIFIÉ) --
 router.delete('/membres/:id', isAdmin, (req, res) => {
   const id = req.params.id;
-  pool.query(`DELETE FROM membres WHERE id = ${id};`)
+  pool.query(`DELETE FROM membres WHERE id = ${id} RETURNING *;`)
     .then(result => {
-        res.json(`Suppression du membre id=${id} réussie !`);
+        const deletedMembre = result.rows[0];
+        res.json({ message: `Membre supprimé`, membre: deletedMembre });
         getIO().emit('membre_supprimé', { id: id });
-        console.log(`Suppression du membre id=${id} réussie !`);
-        logAction(req.user.id, 'membres', id, 'DELETE'); // log de la suppression
+        console.log(`✅ Membre supprimé:`, deletedMembre);
+        logAction(req.user.id, 'membres', id, 'DELETE');
     })
     .catch(err => handleError(res, err, 'DELETE /membres'));
 });

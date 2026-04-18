@@ -1,174 +1,294 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_URL } from '@/constants/api';
+import { API_URL } from '@/constants/api'; // ✅ Import depuis constants/api.js
 
-const BASE_URL = API_URL;
+// ✅ Log de l'URL au démarrage
+console.log('🌐 API_URL importée depuis constants/api.js:', API_URL);
 
-const getToken = async () => AsyncStorage.getItem('userToken');
+// ==================== MEMBRES ====================
 
-const authHeaders = async () => {
-  const token = await getToken();
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-};
+export async function getMembres() {
+  try {
+    const token = await AsyncStorage.getItem('userToken');
+    console.log('📡 GET /membres');
+    
+    const response = await fetch(`${API_URL}/membres`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: token ? `Bearer ${token}` : '',
+      },
+    });
 
-const handleResponse = async (res, route) => {
-  const text = await res.text();
-  console.log(`[API] ${route} → ${res.status}:`, text);
-  try { return JSON.parse(text); }
-  catch { return text; }
-};
+    console.log('📥 Réponse GET /membres:', response.status);
 
-// ── Membres ──
-export const getMembres = async () => {
-  const headers = await authHeaders();
-  const res = await fetch(`${BASE_URL}/membres`, { headers });
-  return handleResponse(res, 'GET /membres');
-};
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Erreur ${response.status}: ${error}`);
+    }
 
-export const getMembre = async (id) => {
-  const headers = await authHeaders();
-  const res = await fetch(`${BASE_URL}/membres/${id}`, { headers });
-  return handleResponse(res, `GET /membres/${id}`);
-};
+    return await response.json();
+  } catch (error) {
+    console.error('❌ Erreur getMembres:', error);
+    throw error;
+  }
+}
 
-export const postMembre = async (data) => {
-  const headers = await authHeaders();
-  const body = {
-    "prénom": data.prénom,
-    nom: data.nom ?? null,
-    sexe: data.sexe ?? null,
-    date_naissance: data.date_naissance ?? null,
-    "date_décès": data['date_décès'] ?? null,
-    id_user: data.id_user ? parseInt(data.id_user) : null,
-    "informations_complémentaires": data['informations_complémentaires'] ?? null,
-    photo: data.photo ?? null,
-    "privé": data['privé'] ?? false,
-    id_union: data.id_union ?? null,
-    biologique: data.biologique ?? null,
-  };
-  console.log('[API] postMembre body:', JSON.stringify(body));
-  const res = await fetch(`${BASE_URL}/membres`, {
-    method: 'POST', headers, body: JSON.stringify(body),
-  });
-  return handleResponse(res, 'POST /membres');
-};
+export async function postMembre(membreData) {
+  try {
+    const token = await AsyncStorage.getItem('userToken');
+    console.log('📡 POST /membres avec:', membreData);
+    console.log('🔑 Token présent:', !!token);
+    console.log('🌐 URL complète:', `${API_URL}/membres`);
+    
+    const response = await fetch(`${API_URL}/membres`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: token ? `Bearer ${token}` : '',
+      },
+      body: JSON.stringify(membreData),
+    });
 
-export const patchMembre = async (id, data) => {
-  const headers = await authHeaders();
-  const body = {
-    "prénom": data['prénom'] || data.prénom,
-    nom: data.nom ?? null,
-    sexe: data.sexe ?? null,
-    date_naissance: data.date_naissance ?? null,
-    "date_décès": data['date_décès'] ?? null,
-    "informations_complémentaires": data['informations_complémentaires'] ?? null,
-    photo: data.photo ?? null,
-    "privé": data['privé'] ?? false,
-    id_union: data.id_union ?? null,
-    biologique: data.biologique ?? null,
-  };
-  console.log(`[API] patchMembre ${id} body:`, JSON.stringify(body));
-  const res = await fetch(`${BASE_URL}/membres/${id}`, {
-    method: 'PATCH', headers, body: JSON.stringify(body),
-  });
-  return handleResponse(res, `PATCH /membres/${id}`);
-};
+    console.log('📥 Réponse POST /membres:', response.status);
 
-export const deleteMembre = async (id) => {
-  const headers = await authHeaders();
-  const res = await fetch(`${BASE_URL}/membres/${id}`, {
-    method: 'DELETE', headers,
-  });
-  return handleResponse(res, `DELETE /membres/${id}`);
-};
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('❌ Erreur serveur:', error);
+      throw new Error(`Erreur ${response.status}: ${error}`);
+    }
 
-// ── Unions ──
-export const getUnions = async () => {
-  const headers = await authHeaders();
-  const res = await fetch(`${BASE_URL}/unions`, { headers });
-  return handleResponse(res, 'GET /unions');
-};
+    const result = await response.json();
+    console.log('✅ Membre créé:', result);
+    return result;
+  } catch (error) {
+    console.error('❌ Erreur postMembre:', error.message);
+    throw error;
+  }
+}
 
-export const getUnion = async (id) => {
-  const headers = await authHeaders();
-  const res = await fetch(`${BASE_URL}/unions/${id}`, { headers });
-  return handleResponse(res, `GET /unions/${id}`);
-};
+export async function patchMembre(id, membreData) {
+  try {
+    const token = await AsyncStorage.getItem('userToken');
+    console.log(`📡 PATCH /membres/${id}`);
+    
+    const response = await fetch(`${API_URL}/membres/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: token ? `Bearer ${token}` : '',
+      },
+      body: JSON.stringify(membreData),
+    });
 
-export const postUnion = async (data) => {
-  const headers = await authHeaders();
-  const body = {
-    id_membre_1: data.id_membre_1 ?? null,
-    id_membre_2: data.id_membre_2 ?? null,
-    date_union: data.date_union ?? null,
-    "date_séparation": data['date_séparation'] ?? null,
-  };
-  console.log('[API] postUnion body:', JSON.stringify(body));
-  const res = await fetch(`${BASE_URL}/unions`, {
-    method: 'POST', headers, body: JSON.stringify(body),
-  });
-  return handleResponse(res, 'POST /unions');
-};
+    console.log(`📥 Réponse PATCH /membres/${id}:`, response.status);
 
-export const patchUnion = async (id, data) => {
-  const headers = await authHeaders();
-  const body = {
-    id_membre_1: data.id_membre_1 ?? null,
-    id_membre_2: data.id_membre_2 ?? null,
-    date_union: data.date_union ?? null,
-    "date_séparation": data['date_séparation'] ?? null,
-  };
-  console.log(`[API] patchUnion ${id} body:`, JSON.stringify(body));
-  const res = await fetch(`${BASE_URL}/unions/${id}`, {
-    method: 'PATCH', headers, body: JSON.stringify(body),
-  });
-  return handleResponse(res, `PATCH /unions/${id}`);
-};
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Erreur ${response.status}: ${error}`);
+    }
 
-// ── Coordonnées ──
-export const getCoordonnees = async (id) => {
-  const headers = await authHeaders();
-  const res = await fetch(`${BASE_URL}/coordonnees/${id}`, { headers });
-  return handleResponse(res, `GET /coordonnees/${id}`);
-};
+    return await response.json();
+  } catch (error) {
+    console.error('❌ Erreur patchMembre:', error);
+    throw error;
+  }
+}
 
-export const postCoordonnees = async (data) => {
-  const headers = await authHeaders();
-  const res = await fetch(`${BASE_URL}/coordonnees`, {
-    method: 'POST', headers, body: JSON.stringify(data),
-  });
-  return handleResponse(res, 'POST /coordonnees');
-};
+export async function deleteMembre(id) {
+  try {
+    const token = await AsyncStorage.getItem('userToken');
+    console.log(`📡 DELETE /membres/${id}`);
+    
+    const response = await fetch(`${API_URL}/membres/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: token ? `Bearer ${token}` : '',
+      },
+    });
 
-export const patchCoordonnees = async (id, data) => {
-  const headers = await authHeaders();
-  const res = await fetch(`${BASE_URL}/coordonnees/${id}`, {
-    method: 'PATCH', headers, body: JSON.stringify(data),
-  });
-  return handleResponse(res, `PATCH /coordonnees/${id}`);
-};
+    console.log(`📥 Réponse DELETE /membres/${id}:`, response.status);
 
-// ── Professions ──
-export const getProfessions = async (id) => {
-  const headers = await authHeaders();
-  const res = await fetch(`${BASE_URL}/professions/${id}`, { headers });
-  return handleResponse(res, `GET /professions/${id}`);
-};
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Erreur ${response.status}: ${error}`);
+    }
 
-export const postProfession = async (data) => {
-  const headers = await authHeaders();
-  const res = await fetch(`${BASE_URL}/professions`, {
-    method: 'POST', headers, body: JSON.stringify(data),
-  });
-  return handleResponse(res, 'POST /professions');
-};
+    return await response.json();
+  } catch (error) {
+    console.error('❌ Erreur deleteMembre:', error);
+    throw error;
+  }
+}
 
-export const patchProfession = async (id, data) => {
-  const headers = await authHeaders();
-  const res = await fetch(`${BASE_URL}/professions/${id}`, {
-    method: 'PATCH', headers, body: JSON.stringify(data),
-  });
-  return handleResponse(res, `PATCH /professions/${id}`);
-};
+// ==================== UNIONS ====================
+
+export async function getUnions() {
+  try {
+    const token = await AsyncStorage.getItem('userToken');
+    console.log('📡 GET /unions');
+    
+    const response = await fetch(`${API_URL}/unions`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: token ? `Bearer ${token}` : '',
+      },
+    });
+
+    console.log('📥 Réponse GET /unions:', response.status);
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Erreur ${response.status}: ${error}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('❌ Erreur getUnions:', error);
+    throw error;
+  }
+}
+
+export async function postUnion(unionData) {
+  try {
+    const token = await AsyncStorage.getItem('userToken');
+    console.log('📡 POST /unions avec:', unionData);
+    
+    const response = await fetch(`${API_URL}/unions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: token ? `Bearer ${token}` : '',
+      },
+      body: JSON.stringify(unionData),
+    });
+
+    console.log('📥 Réponse POST /unions:', response.status);
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Erreur ${response.status}: ${error}`);
+    }
+
+    const result = await response.json();
+    console.log('✅ Union créée:', result);
+    return result;
+  } catch (error) {
+    console.error('❌ Erreur postUnion:', error);
+    throw error;
+  }
+}
+
+export async function patchUnion(id, unionData) {
+  try {
+    const token = await AsyncStorage.getItem('userToken');
+    console.log(`📡 PATCH /unions/${id}`);
+    
+    const response = await fetch(`${API_URL}/unions/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: token ? `Bearer ${token}` : '',
+      },
+      body: JSON.stringify(unionData),
+    });
+
+    console.log(`📥 Réponse PATCH /unions/${id}:`, response.status);
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Erreur ${response.status}: ${error}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('❌ Erreur patchUnion:', error);
+    throw error;
+  }
+}
+
+export async function deleteUnion(id) {
+  try {
+    const token = await AsyncStorage.getItem('userToken');
+    console.log(`📡 DELETE /unions/${id}`);
+    
+    const response = await fetch(`${API_URL}/unions/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: token ? `Bearer ${token}` : '',
+      },
+    });
+
+    console.log(`📥 Réponse DELETE /unions/${id}:`, response.status);
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Erreur ${response.status}: ${error}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('❌ Erreur deleteUnion:', error);
+    throw error;
+  }
+}
+
+// ==================== AUTH ====================
+
+export async function login(email, password) {
+  try {
+    console.log('📡 POST /login');
+    
+    const response = await fetch(`${API_URL}/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    console.log('📥 Réponse POST /login:', response.status);
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Erreur ${response.status}: ${error}`);
+    }
+
+    const result = await response.json();
+    console.log('✅ Connexion réussie');
+    return result;
+  } catch (error) {
+    console.error('❌ Erreur login:', error);
+    throw error;
+  }
+}
+
+export async function register(email, password) {
+  try {
+    console.log('📡 POST /users (register)');
+    
+    const response = await fetch(`${API_URL}/users`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    console.log('📥 Réponse POST /users:', response.status);
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Erreur ${response.status}: ${error}`);
+    }
+
+    const result = await response.json();
+    console.log('✅ Inscription réussie');
+    return result;
+  } catch (error) {
+    console.error('❌ Erreur register:', error);
+    throw error;
+  }
+}

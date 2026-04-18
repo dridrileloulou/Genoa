@@ -1,11 +1,4 @@
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  Modal,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, TextInput, Pressable, Modal, StyleSheet } from 'react-native';
 import { useState } from 'react';
 import { API_URL } from '@/constants/api';
 
@@ -16,25 +9,20 @@ export function CreateUser({ visible, onClose, onUserCreated }) {
 
   const createUser = async () => {
     setLoading(true);
-
     try {
       const res = await fetch(`${API_URL}/users`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-
       const data = await res.json();
-
       if (res.ok) {
         setEmail('');
         setPassword('');
         onUserCreated?.();
         onClose();
       } else {
-        alert(data.error || 'Error');
+        alert(data.error || 'Erreur');
       }
     } catch (err) {
       console.error(err);
@@ -47,40 +35,50 @@ export function CreateUser({ visible, onClose, onUserCreated }) {
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.overlay}>
         <View style={styles.modal}>
-          <Text style={styles.title}>Create User</Text>
+          <Text style={styles.title}>Créer un utilisateur</Text>
 
+          <Text style={styles.label}>Email</Text>
           <TextInput
             placeholder="Email"
-            placeholderTextColor="#888"
+            placeholderTextColor="#64748B"
             value={email}
             onChangeText={setEmail}
             style={styles.input}
+            keyboardType="email-address"
+            autoCapitalize="none"
           />
 
+          <Text style={styles.label}>Mot de passe</Text>
           <TextInput
-            placeholder="Password"
-            placeholderTextColor="#888"
+            placeholder="Mot de passe"
+            placeholderTextColor="#64748B"
             secureTextEntry
             value={password}
             onChangeText={setPassword}
             style={styles.input}
           />
 
-          <Pressable style={styles.createBtn} onPress={createUser}>
-            <Text style={styles.btnText}>
-              {loading ? 'Creating...' : 'Create'}
+          <Pressable
+            style={({ pressed }) => [styles.createBtn, (pressed || loading) && styles.btnPressed]}
+            onPress={createUser}
+            disabled={loading}
+          >
+            <Text style={styles.createBtnText}>
+              {loading ? 'Création...' : 'Créer'}
             </Text>
           </Pressable>
 
-          <Pressable style={styles.closeBtn} onPress={onClose}>
-            <Text style={styles.btnText}>Cancel</Text>
+          <Pressable
+            style={({ pressed }) => [styles.cancelBtn, pressed && styles.btnPressed]}
+            onPress={onClose}
+          >
+            <Text style={styles.cancelBtnText}>Annuler</Text>
           </Pressable>
         </View>
       </View>
     </Modal>
   );
 }
-
 
 const styles = StyleSheet.create({
   overlay: {
@@ -89,51 +87,67 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-
   modal: {
-    width: '85%',
-    backgroundColor: '#0f1115',
-    padding: 20,
+    width: '88%',
+    backgroundColor: '#0F172A',
+    padding: 24,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#2d7a2d',
+    borderColor: '#334155',
   },
-
   title: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#fff',
-    marginBottom: 15,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#ffffff',
+    marginBottom: 16,
     textAlign: 'center',
   },
-
+  label: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748B',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginTop: 12,
+    marginBottom: 6,
+  },
   input: {
-    backgroundColor: '#161b22',
-    color: '#fff',
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 10,
+    backgroundColor: '#1E293B',
     borderWidth: 1,
-    borderColor: '#2d7a2d',
-  },
-
-  createBtn: {
-    backgroundColor: '#2d7a2d',
-    padding: 12,
+    borderColor: '#334155',
     borderRadius: 10,
-    marginTop: 5,
+    paddingVertical: 13,
+    paddingHorizontal: 14,
+    fontSize: 15,
+    color: '#ffffff',
   },
-
-  closeBtn: {
-    backgroundColor: '#333',
-    padding: 12,
+  createBtn: {
+    backgroundColor: '#60A5FA',
+    padding: 14,
+    borderRadius: 10,
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  createBtnText: {
+    color: '#0F172A',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  cancelBtn: {
+    backgroundColor: '#1E293B',
+    padding: 13,
     borderRadius: 10,
     marginTop: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#334155',
   },
-
-  btnText: {
-    color: '#fff',
-    fontWeight: '700',
-    textAlign: 'center',
+  cancelBtnText: {
+    color: '#94A3B8',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  btnPressed: {
+    opacity: 0.7,
   },
 });

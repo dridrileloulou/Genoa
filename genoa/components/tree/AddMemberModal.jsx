@@ -37,8 +37,24 @@ export default function AddMemberModal({ visible, onClose, onSuccess, currentUse
   const loadData = async () => {
     try {
       const [m, u] = await Promise.all([getMembres(), getUnions()]);
-      setMembres(Array.isArray(m) ? m : []);
-      setUnions(Array.isArray(u) ? u : []);
+      const allMembres = Array.isArray(m) ? m : [];
+      const allUnions = Array.isArray(u) ? u : [];
+      
+      // Filtrer les membres par currentUserId pour n'afficher que ceux de l'arbre actuel
+      const filteredMembres = currentUserId 
+        ? allMembres.filter((membre) => membre.id_user === currentUserId)
+        : allMembres;
+      
+      // Créer un Set des IDs de membres de cet arbre
+      const membreIdsSet = new Set(filteredMembres.map(m => m.id));
+      
+      // Filtrer les unions : une union appartient à l'arbre si au moins un de ses membres y appartient
+      const filteredUnions = allUnions.filter((union) => 
+        membreIdsSet.has(union.id_membre_1) || membreIdsSet.has(union.id_membre_2)
+      );
+      
+      setMembres(filteredMembres);
+      setUnions(filteredUnions);
     } catch (e) { console.error(e); }
   };
 
@@ -52,40 +68,84 @@ export default function AddMemberModal({ visible, onClose, onSuccess, currentUse
   );
 
   const handleSubmit = async () => {
-    if (!prénom.trim()) { Alert.alert('Erreur', 'Le prénom est obligatoire.'); return; }
+    if (!prénom.trim()) { 
+      Alert.alert('Erreur', 'Le prénom est obligatoire.'); 
+      return; 
+    }
+
+    if (!currentUserId) {
+      Alert.alert('Erreur', 'Impossible de déterminer le propriétaire de l\'arbre.');
+      return;
+    }
+    
     setLoading(true);
+    
     try {
       let id_union = null;
+      
       if (parent1Id || parent2Id) {
         const p1 = parent1Id ? parseInt(parent1Id) : null;
         const p2 = parent2Id ? parseInt(parent2Id) : null;
         const existing = p1 && p2 ? findExistingUnion(p1, p2) : null;
+        
         if (existing) {
           id_union = existing.id;
+          console.log('✅ Union existante trouvée:', id_union);
         } else {
-          await postUnion({ id_membre_1: p1, id_membre_2: p2 });
-          const updatedUnions = await getUnions();
-          const newUnion = updatedUnions.filter(
-            (u) =>
-              (u.id_membre_1 === p1 && u.id_membre_2 === p2) ||
-              (u.id_membre_1 === p2 && u.id_membre_2 === p1) ||
-              (p1 && !p2 && u.id_membre_1 === p1 && u.id_membre_2 === null) ||
-              (!p1 && p2 && u.id_membre_2 === p2 && u.id_membre_1 === null)
-          ).sort((a, b) => b.id - a.id)[0];
-          id_union = newUnion?.id ?? null;
+          console.log('🔗 Création nouvelle union:', { p1, p2 });
+          const newUnionResult = await postUnion({ 
+            id_membre_1: p1, 
+            id_membre_2: p2
+          });
+          
+          // Si l'API retourne l'union créée avec son ID
+          if (newUnionResult && newUnionResult.id) {
+            id_union = newUnionResult.id;
+          } else {
+            // Sinon, on récupère la dernière union créée
+            const updatedUnions = await getUnions();
+            const newUnion = updatedUnions.filter(
+              (u) =>
+                (u.id_membre_1 === p1 && u.id_membre_2 === p2) ||
+                (u.id_membre_1 === p2 && u.id_membre_2 === p1) ||
+                (p1 && !p2 && u.id_membre_1 === p1 && u.id_membre_2 === null) ||
+                (!p1 && p2 && u.id_membre_2 === p2 && u.id_membre_1 === null)
+            ).sort((a, b) => b.id - a.id)[0];
+            id_union = newUnion?.id ?? null;
+          }
+          console.log('✅ Nouvelle union créée:', id_union);
         }
       }
-      await postMembre({
-        prénom: prénom.trim(), nom: nom.trim() || null, sexe: sexe || null,
-        date_naissance: dateNaissance || null, date_décès: null,
-        id_user: currentUserId, informations_complémentaires: null,
-        photo: null, privé: false, id_union: id_union, biologique: true,
+
+      console.log('👤 Création membre avec:', {
+        prénom: prénom.trim(),
+        nom: nom.trim() || null,
+        id_union,
+        id_user: currentUserId
       });
+
+      const newMembre = await postMembre({
+        prénom: prénom.trim(),
+        nom: nom.trim() || null,
+        sexe: sexe || null,
+        date_naissance: dateNaissance || null,
+        date_décès: null,
+        id_user: currentUserId,
+        informations_complémentaires: null,
+        photo: null,
+        privé: false,
+        id_union: id_union,
+        biologique: true,
+      });
+
+      console.log('✅ Membre créé avec succès:', newMembre);
+      
       onSuccess();
       onClose();
+      
     } catch (e) {
-      Alert.alert('Erreur', "Impossible d'ajouter le membre.");
-      console.error(e);
+      console.error('❌ Erreur création membre:', e);
+      Alert.alert('Erreur', "Impossible d'ajouter le membre. Vérifiez les données.");
     } finally {
       setLoading(false);
     }
@@ -172,7 +232,6 @@ export default function AddMemberModal({ visible, onClose, onSuccess, currentUse
                       placeholder="Rechercher un membre..."
                       placeholderTextColor="#5a7a65"
                     />
-                    {/* ✅ Dropdown scrollable */}
                     {showDropdown1 && filteredMembres1.length > 0 && (
                       <View style={styles.dropdown}>
                         <ScrollView
@@ -210,7 +269,6 @@ export default function AddMemberModal({ visible, onClose, onSuccess, currentUse
                       placeholder="Rechercher un membre..."
                       placeholderTextColor="#5a7a65"
                     />
-                    {/* ✅ Dropdown scrollable */}
                     {showDropdown2 && filteredMembres2.length > 0 && (
                       <View style={styles.dropdown}>
                         <ScrollView
@@ -395,7 +453,11 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(80,160,100,0.2)',
     borderRadius: 10,
     marginTop: 4,
+    maxHeight: 150,
     overflow: 'hidden',
+  },
+  dropdownScroll: {
+    maxHeight: 150,
   },
   dropdownItem: {
     padding: 12,
