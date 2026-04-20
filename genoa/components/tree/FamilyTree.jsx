@@ -224,7 +224,7 @@ export default function FamilyTree({ userId, userRole, targetUserId }) {
   const savedX = useSharedValue(0);
   const savedY = useSharedValue(0);
 
-  const canEdit = userRole === 'admin' || userRole === 'editeur';
+  const canEdit = userRole === 'admin' || userRole === 'éditeur' || userRole === 'editeur';
   const isAdminRole = userRole === 'admin';
 
   // L'id_user du propriétaire de l'arbre affiché
@@ -427,7 +427,8 @@ export default function FamilyTree({ userId, userRole, targetUserId }) {
         onSuccess={loadData}
         canEdit={canEdit}
         isAdmin={isAdminRole}
-        currentUserId={treeOwnerId}
+        currentUserId={userId}
+        treeOwnerId={treeOwnerId}
       />
     </View>
   );

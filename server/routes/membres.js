@@ -65,14 +65,26 @@ router.post('/membres', isEditor, (req, res) => {
 });
 
 // -- PATCH (✅ MODIFIÉ) --
-router.patch('/membres/:id', isEditor, (req, res) => {
+router.patch('/membres/:id', isEditor, async (req, res) => {
   console.log('=== BODY REÇU PATCH /membres ===', req.body);
+
+  const id = req.params.id;
+
+  // Vérification du verrou : refuser si verrouillé par quelqu'un d'autre
+  try {
+    const lockCheck = await pool.query('SELECT lock_user_id FROM membres WHERE id = $1', [id]);
+    const membre = lockCheck.rows[0];
+    if (membre && membre.lock_user_id !== null && membre.lock_user_id !== req.user.id) {
+      return res.status(423).json({ erreur: 'Membre verrouillé par un autre utilisateur' });
+    }
+  } catch (err) {
+    return handleError(res, err, 'PATCH /membres lock check');
+  }
 
   const { sexe, nom, date_naissance, informations_complémentaires, photo, id_union, biologique } = req.body;
   const prénom = req.body['prénom'] || req.body['prenom'];
   const date_décès = req.body['date_décès'] || req.body['date_deces'] || null;
   const privé = req.body['privé'] ?? req.body['prive'] ?? false;
-  const id = req.params.id;
 
   pool.query(
     `UPDATE membres SET sexe=\$1, "prénom"=\$2, nom=\$3, date_naissance=\$4, "date_décès"=\$5, "informations_complémentaires"=\$6, photo=\$7, "privé"=\$8, id_union=\$9, biologique=\$10 WHERE id=\$11 RETURNING *`,

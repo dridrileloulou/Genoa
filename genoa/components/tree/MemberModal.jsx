@@ -7,8 +7,9 @@ import {
   patchMembre, deleteMembre,
   getMembres, getUnions, postUnion, patchUnion,
 } from '@/components/api/api';
+import socket from '@/constants/socket';
 
-export default function MemberModal({ visible, membre, onClose, onSuccess, canEdit, isAdmin, currentUserId }) {
+export default function MemberModal({ visible, membre, onClose, onSuccess, canEdit, isAdmin, currentUserId, treeOwnerId }) {
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState('infos');
 
@@ -31,7 +32,7 @@ export default function MemberModal({ visible, membre, onClose, onSuccess, canEd
   const [familleLoading, setFamilleLoading] = useState(false);
 
   // Déterminer l'id_user du propriétaire de l'arbre
-  const treeOwnerId = currentUserId || membre?.id_user;
+  const effectiveTreeOwnerId = treeOwnerId || currentUserId || membre?.id_user;
 
   useEffect(() => {
     if (membre && visible) {
@@ -43,7 +44,15 @@ export default function MemberModal({ visible, membre, onClose, onSuccess, canEd
       setInfos(membre['informations_complémentaires'] || '');
       setTab('infos');
       loadExtra(membre.id);
+      if (canEdit && currentUserId) {
+        socket.emit('verrouiller_membre', { id_membre: membre.id, id_user: currentUserId });
+      }
     }
+    return () => {
+      if (membre && canEdit && currentUserId) {
+        socket.emit('liberer_membre', { id_membre: membre.id, id_user: currentUserId });
+      }
+    };
   }, [membre, visible]);
 
   const loadExtra = async (membreId) => {
@@ -57,8 +66,8 @@ export default function MemberModal({ visible, membre, onClose, onSuccess, canEd
       const allUnionsData = Array.isArray(us) ? us : [];
       
       // Filtrer les membres par treeOwnerId pour n'afficher que ceux de l'arbre actuel
-      const filteredMembres = treeOwnerId 
-        ? allMembresData.filter((m) => m.id_user === treeOwnerId)
+      const filteredMembres = effectiveTreeOwnerId
+        ? allMembresData.filter((m) => m.id_user === effectiveTreeOwnerId)
         : allMembresData;
       
       // Créer un Set des IDs de membres de cet arbre
@@ -195,8 +204,11 @@ export default function MemberModal({ visible, membre, onClose, onSuccess, canEd
         'privé': membreCourant['privé'] ?? false,
         id_union: membreCourant.id_union ?? null,
         biologique: membreCourant.biologique ?? null,
-        id_user: membreCourant.id_user ?? treeOwnerId,
+        id_user: membreCourant.id_user ?? effectiveTreeOwnerId,
       });
+      if (canEdit && currentUserId) {
+        socket.emit('liberer_membre', { id_membre: membre.id, id_user: currentUserId });
+      }
       onSuccess();
       onClose();
     } catch (e) {

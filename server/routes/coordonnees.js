@@ -3,7 +3,8 @@ const router = express.Router();
 const pool = require('../db/pool.js');
 const { isEditor, isAdmin } = require('../middleware/roles.js');
 const { getIO } = require('../socketManager.js'); // getIO -> envoie a toutes les sockets
-const logAction = require('../utils/logAction.js'); // enregistre les actions dans la table logs
+const logAction = require('../utils/logAction.js');
+const checkLock = require('../utils/checkLock.js');
 
 
 const handleError = (res, err, route) => {
@@ -33,8 +34,9 @@ router.get('/coordonnees/:id', (req, res) => {
 });
 
 // -- POST --
-router.post('/coordonnees', isEditor, (req, res) => {
+router.post('/coordonnees', isEditor, async (req, res) => {
     const { id_membre, adresse, téléphone, email } = req.body;
+    if (await checkLock(id_membre, req.user.id)) return res.status(423).json({ erreur: 'Membre verrouillé par un autre utilisateur' });
     pool.query(`INSERT INTO "coordonnées" (id_membre, adresse, "téléphone", email) VALUES (${id_membre}, '${adresse}', '${téléphone}', '${email}')`)
     .then(result => {
         res.json(`Nouvelles coordonnées ajoutées pour membre id=${id_membre} !`);
@@ -46,9 +48,10 @@ router.post('/coordonnees', isEditor, (req, res) => {
 });
 
 // -- PATCH --
-router.patch('/coordonnees/:id', isEditor, (req, res) => {
+router.patch('/coordonnees/:id', isEditor, async (req, res) => {
     const { id_membre, adresse, téléphone, email } = req.body;
     const id = req.params.id;
+    if (await checkLock(id_membre, req.user.id)) return res.status(423).json({ erreur: 'Membre verrouillé par un autre utilisateur' });
     pool.query(`UPDATE "coordonnées" SET id_membre=${id_membre}, adresse='${adresse}', "téléphone"='${téléphone}', email='${email}' WHERE id=${id}`)
     .then(result => {
         res.json(`Coordonnées id=${id} mises à jour !`);
